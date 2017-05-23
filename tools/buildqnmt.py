@@ -28,8 +28,8 @@ def handle(srctf, srcrf, rsf1, rsf2):
 						tmp = tmp.decode("utf-8")
 						if tmp.startswith("<qid_"):
 							cache.insert(0, tmp[tmp.find("|||")+4:])
-							cache.append("")
 							fwrts.write(" ".join(cache).encode("utf-8"))
+							fwrts.write("\n".encode("utf-8"))
 							fwrtt.write(curans.encode("utf-8"))
 							fwrtt.write("\n".encode("utf-8"))
 							cache = []
