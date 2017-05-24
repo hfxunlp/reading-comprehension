@@ -1,6 +1,6 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170518_gru_qf"
+runid="170524_gru_qf_coll"
 logd="logs"
 
 ieps=1

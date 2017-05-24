@@ -26,13 +26,15 @@ m:training()
 output=m:forward(input)
 g=m:backward(input, output)
 
-m=clearModule(m)
+--m=clearModule(m)
+m:clearState()
 
 output=m:forward(input)
 
 g=m:backward(input, output)
 
-m=clearModule(m)
+--m=clearModule(m)
+m:clearState()
 
 --torch.save("test.asc", m, "binary", false)
 torch.save("test.asc", m, "binary", true)

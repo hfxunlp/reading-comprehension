@@ -23,5 +23,5 @@ function getnn()
 end
 
 function getcrit()
-	return nn.MarginCriterion();
+	return nn.MultiMarginCriterion();
 end

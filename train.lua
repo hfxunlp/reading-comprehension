@@ -16,6 +16,31 @@ local function train(trainset, devset, memlimit)
 
 	local function _train(trainset, devset, memlimit)
 
+		local function getarg(x, tin)
+			local vocab = {}
+			local curid = 1
+			local curwd = 1
+			local fscore = tin:reshape(tin:size(1)):totable()
+			local fnd = nil
+			for _, sent in ipairs(x) do
+				for __, wd in ipairs(sent:reshape(sent:size(1)):totable()) do
+					if not vocab[wd] then
+						vocab[wd] = curid
+						curid = curid + 1
+					end
+					if fscore[curwd] or 1 == 1 then
+						fnd = wd
+						break
+					else
+						curwd = curwd + 1
+					end
+				end
+				if fnd then
+					break
+				end
+			end
+			return torch.Tensor({vocab[fnd] or curid - 1})
+		end
 
 		logger:log("pre load package")
 		require "nn"
@@ -82,7 +107,8 @@ local function train(trainset, devset, memlimit)
 			local serr=0
 			xlua.progress(0, ndev)
 			for i,devu in ipairs(devdata) do
-				serr=serr+criterionin:forward(mlpin:forward({mkcudaLong(devu[1]), devu[2]:cudaLong()}), devu[3]:cuda())
+				local passage = devu[1]
+				serr=serr+criterionin:forward(mlpin:forward({mkcudaLong(passage), devu[2]:cudaLong()}), getarg(passage, devu[3]):cudaLong())
 				xlua.progress(i, ndev)
 			end
 			mlpin:training()
@@ -91,17 +117,18 @@ local function train(trainset, devset, memlimit)
 
 		local function saveObject(fname,objWrt)
 
-			local function clearModule(module)
+			--[[local function clearModule(module)
 				module:apply(function(m)
 					if m.clearState and not torch.isTypeOf(m, "nn.gModule") then
 						m:clearState()
 					end
 				end)
 				return module
-			end
+			end]]
 
 			if torch.isTypeOf(objWrt, "nn.Module") then
-				torch.save(fname, clearModule(objWrt), 'binary', true)
+				objWrt:clearState()
+				torch.save(fname, objWrt, 'binary', true)
 			else
 				torch.save(fname, objWrt, 'binary', false)
 			end
@@ -161,7 +188,8 @@ local function train(trainset, devset, memlimit)
 			for tmpj=1,ieps do
 				xlua.progress(0, ntrain)
 				for i,trainu in ipairs(trainset) do
-					gradUpdate(nnmod,{mkcudaLong(trainu[1]), trainu[2]:cudaLong()},trainu[3]:cuda(),critmod,lr,optmethod,memlimit)
+					local passage = trainu[1]
+					gradUpdate(nnmod,{mkcudaLong(passage), trainu[2]:cudaLong()},getarg(passage, trainu[3]):cudaLong(),critmod,lr,optmethod,memlimit)
 					xlua.progress(i, ntrain)
 				end
 			end
@@ -198,7 +226,8 @@ local function train(trainset, devset, memlimit)
 				for tmpi=1,ieps do
 					xlua.progress(0, ntrain)
 					for i,trainu in ipairs(trainset) do
-						gradUpdate(nnmod,{mkcudaLong(trainu[1]), trainu[2]:cudaLong()},trainu[3]:cuda(),critmod,lr,optmethod,memlimit)
+						local passage = trainu[1]
+						gradUpdate(nnmod,{mkcudaLong(passage), trainu[2]:cudaLong()},getarg(passage, trainu[3]):cudaLong(),critmod,lr,optmethod,memlimit)
 						xlua.progress(i, ntrain)
 					end
 				end
