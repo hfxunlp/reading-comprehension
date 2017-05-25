@@ -1,6 +1,13 @@
 require "nngraph"
 
-return function (osize, hsize, cisize, nlayer)
+return function (osize, hsize, cisize, nlayer, hidsize)
+	local function halfsize(sizein)
+		local rs = math.ceil(sizein/2)
+		if rs%2==1 then
+			rs = rs + 1
+		end
+		return rs
+	end
 	require "deps.vecLookup"
 	require "deps.TableContainer"
 	local qvm = nn.vecLookup(wvec)
@@ -10,12 +17,17 @@ return function (osize, hsize, cisize, nlayer)
 	cisize = cisize or hsize
 	nlayer = nlayer or 1
 	require "deps.SequenceContainer"
-	require "models.CFHiQATagger"
+	require "models.FullTagger"
 	local buildEncoder = require "deps.fgru"
 	local SentEnc = buildEncoder(isize, hsize, nlayer, true)
-	local PEnc = buildEncoder(hsize, cisize, nlayer)
-	local clsm = nn.Linear(isize + hsize * 2 + cisize + isize, osize, false)
-	local corem = nn.CFHiQATagger(SentEnc, PEnc, clsm, true)
+	local PEnc = buildEncoder(hsize, cisize, nlayer, true)
+	local clsm_isize = isize + hsize * 2 + cisize * 2 + isize
+	local clsm_hsize = hidsize or halfsize(clsm_isize)
+	local clsm = nn.Sequential()
+		:add(nn.Linear(clsm_isize, clsm_hsize))
+		:add(nn.Tanh())
+		:add(nn.Linear(clsm_hsize, osize, false))
+	local corem = nn.FullTagger(SentEnc, PEnc, clsm, true)
 	local inputp = nn.Identity()()
 	local inputq = nn.Identity()()
 	local vp = pvm(inputp)--()

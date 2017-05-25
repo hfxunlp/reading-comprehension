@@ -1,14 +1,15 @@
-local Coll, parent = torch.class('nn.Coll', 'nn.Module')
+local AColl, parent = torch.class('nn.AColl', 'nn.Module')
 
 --Warning : this module is not batchable now!
 
-function Coll:__init()
+function AColl:__init()
 	parent.__init(self)
 end
 
-function Coll:updateOutput(input)
+function AColl:updateOutput(input)
 	local passage, fscore = unpack(input)
 	self.vocab = {}
+	self.vcount = {}
 	local score = {}
 	local _fscore = fscore:reshape(fscore:size(1)):totable()
 	local curwd = 1
@@ -20,19 +21,24 @@ function Coll:updateOutput(input)
 				self.vocab[wd] = curid
 				wid = curid
 				curid = curid + 1
+				self.vcount[wd] = 1
 			else
 				wid = self.vocab[wd]
+				self.vcount[wd] = self.vcount[wd] + 1
 			end
 			local curscore = _fscore[curwd] or 0
 			curwd = curwd + 1
 			score[wid] = score[wid] or 0 + curscore
 		end
 	end
+	for wd, wid in ipairs(self.vocab) do
+		score[wid] = score[wid] / self.vcount[wd]
+	end
 	self.output = torch.Tensor(score):typeAs(fscore)
 	return self.output
 end
 
-function Coll:updateGradInput(input, gradOutput)
+function AColl:updateGradInput(input, gradOutput)
 	local function buildTableZero(tin)
 		local rs = {}
 		for _, v in ipairs(tin) do
@@ -41,6 +47,9 @@ function Coll:updateGradInput(input, gradOutput)
 			table.insert(rs, tmp)
 		end
 		return rs
+	end
+	for wd, wid in ipairs(self.vocab) do
+		gradOutput[wid]:div(self.vcount[wd])
 	end
 	local passage, fscore = unpack(input)
 	local gscore = {}
@@ -53,7 +62,7 @@ function Coll:updateGradInput(input, gradOutput)
 	return self.gradInput
 end
 
-function Coll:clearState()
+function AColl:clearState()
 	self.vocab = {}
 	return parent.clearState(self)
 end

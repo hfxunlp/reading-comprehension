@@ -1,14 +1,15 @@
-local Coll, parent = torch.class('nn.Coll', 'nn.Module')
+local MaxColl, parent = torch.class('nn.MaxColl', 'nn.Module')
 
 --Warning : this module is not batchable now!
 
-function Coll:__init()
+function MaxColl:__init()
 	parent.__init(self)
 end
 
-function Coll:updateOutput(input)
+function MaxColl:updateOutput(input)
 	local passage, fscore = unpack(input)
 	self.vocab = {}
+	self.mid = {}
 	local score = {}
 	local _fscore = fscore:reshape(fscore:size(1)):totable()
 	local curwd = 1
@@ -24,15 +25,21 @@ function Coll:updateOutput(input)
 				wid = self.vocab[wd]
 			end
 			local curscore = _fscore[curwd] or 0
+			if not score[wid] then
+				score[wid] = curscore
+				self.mid[wd] = curwd
+			elseif score[wid] < curscore then
+				score[wid] = curscore
+				self.mid[wd] = curwd
+			end
 			curwd = curwd + 1
-			score[wid] = score[wid] or 0 + curscore
 		end
 	end
 	self.output = torch.Tensor(score):typeAs(fscore)
 	return self.output
 end
 
-function Coll:updateGradInput(input, gradOutput)
+function MaxColl:updateGradInput(input, gradOutput)
 	local function buildTableZero(tin)
 		local rs = {}
 		for _, v in ipairs(tin) do
@@ -44,16 +51,24 @@ function Coll:updateGradInput(input, gradOutput)
 	end
 	local passage, fscore = unpack(input)
 	local gscore = {}
+	local _g = gradOutput:totable()
+	local curwd = 1
 	for _, sent in ipairs(passage) do
 		for __, wd in ipairs(sent:reshape(sent:size(1)):totable()) do
-			table.insert(gscore, gradOutput[self.vocab[wd]])
+			if curwd == self.mid[wd] then
+				table.insert(gscore, _g[self.vocab[wd]])
+			else
+				table.insert(gscore, 0)
+			end
+			curwd = curwd + 1
 		end
 	end
 	self.gradInput = {buildTableZero(passage), torch.Tensor(gscore):reshape(#gscore, 1):typeAs(fscore)}
 	return self.gradInput
 end
 
-function Coll:clearState()
+function MaxColl:clearState()
 	self.vocab = {}
+	self.mid = {}
 	return parent.clearState(self)
 end

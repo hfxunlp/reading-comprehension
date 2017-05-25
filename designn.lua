@@ -1,5 +1,4 @@
 require "nn"
-require "models.QAM"
 require "cutorch"
 require "cunn"
 require "cudnn"
@@ -13,7 +12,7 @@ end
 
 local function getnnn()
 
-	require "models.QAM"
+	buildQAM=require "models.l2QAM"
 	return buildQAM(1)
 end
 

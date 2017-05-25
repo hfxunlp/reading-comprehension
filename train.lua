@@ -12,7 +12,7 @@ torch.setdefaulttensortype('torch.FloatTensor')
 logger:log("load data")
 require "dloader"
 
-local function train(trainset, devset, memlimit)
+local function train(trainset, devset, memlimit, storevery)
 
 	local function _train(trainset, devset, memlimit)
 
@@ -142,6 +142,7 @@ local function train(trainset, devset, memlimit)
 		local edevrate=0
 		local storemini=1
 		local storedevmini=1
+		local storepoch=1
 		local minerrate=starterate
 		local mindeverrate=minerrate
 
@@ -280,6 +281,13 @@ local function train(trainset, devset, memlimit)
 						lrdecayepochs=lrdecayepochs+1
 						lr=modlr/(lrdecayepochs)
 					end
+					if storevery then
+						saveObject(savedir.."dnnmod"..storepoch..".asc",savennmod)
+						storepoch=storepoch+1
+						if storepoch>csave then
+							storepoch=1
+						end
+					end
 					aminerr=aminerr+1
 				end
 				sumErr=0
@@ -330,6 +338,6 @@ local function train(trainset, devset, memlimit)
 	end
 end
 
-train(traind, devd, recyclemem or 0.05)
+train(traind, devd, recyclemem or 0.05, storedebug)
 
 logger:shutDown()

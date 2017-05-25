@@ -1,5 +1,5 @@
 require "nn"
-require "models.QAM"
+buildQAM=require "models.QAM"
 
 function clearModule(module)
 	module:apply(function(m)

@@ -1,6 +1,6 @@
-local modf = "modrs/170518_gru_qf/devnnmod1.asc" -- model file
+local modf = "modrs/170524_gru_qf_coll/nnmod.asc" -- model file
 local tif = "datasrc/duse/valid.data" -- test input, json format
-local rsf = "test/anscore.txt" -- result score file
+local rsf = "test/canscore.txt" -- result score file
 
 torch.setdefaulttensortype('torch.FloatTensor')
 
@@ -53,6 +53,7 @@ require "deps.JoinFSeq"
 require "deps.SelData"
 require "deps.TableContainer"
 require "deps.SequenceContainer"
+require "deps.MaxColl"
 require "models.CFHiQATagger"
 
 local tmod_full = torch.load(modf)

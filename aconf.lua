@@ -1,6 +1,6 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170524_gru_qf_coll"
+runid="170525_gru_l2qf_maxcoll"
 logd="logs"
 
 ieps=1
@@ -17,3 +17,5 @@ csave=3
 lrdecaycycle=4
 
 recyclemem=0.05
+
+storedebug=true--store model every epoch or not
