@@ -13,7 +13,25 @@ def segline(strin):
 		rs=""
 	return rs.decode("utf-8","ignore")
 
-def getans_mwd(pas, scl):
+def ldmap(fmap, minkeep = 5):
+	rs = {"<unk>":"1"}
+	with open(fmap) as frd:
+		curid = 2
+		for line in frd:
+			tmp = line.strip()
+			if tmp:
+				tmp = tmp.decode("utf-8")
+				tmp = tmp.split(" ")
+				c = int(tmp[0])
+				if c >= minkeep:
+					for wd in tmp[1:]:
+						rs[wd] = curid
+						curid += 1
+				else:
+					break
+	return rs
+
+def getans_mwd(pas, scl, mapd):
 	tmp = scl.strip()
 	tmp = tmp.decode("utf-8")
 	s = [float(tmpu) for tmpu in tmp.split()]
@@ -33,15 +51,22 @@ def getans_mwd(pas, scl):
 		if wd in src:
 			alw.add(wd)
 	rsd = {}
+	allwd = set()
 	for sent in pas:
 		cnt = False
 		for wd in sent:
 			tmp = wd.strip()
 			if tmp:
-				if not tmp in rsd and s:
-					rsd[tmp] = s[0]
-					del s[0]
-					if not s:
+				wid = mapd.get(tmp, 1)
+				if not wid in allwd:
+					if s:
+						rsd[tmp] = s[0]
+						del s[0]
+						allwd.add(wid)
+						if not s:
+							cnt=True
+							break
+					else:
 						cnt=True
 						break
 		if cnt:
@@ -62,15 +87,16 @@ def getans_mwd(pas, scl):
 				rsw = w
 	return rsw, mscore
 
-def getans(pas, scl):
-	w, s = getans_mwd(pas, scl)
+def getans(pas, scl, mapd):
+	w, s = getans_mwd(pas, scl, mapd)
 	#w, s = getans_cwd(pas, scl)
 	return w
 
-def handle(srcif, srctf, rsf):
+def handle(mapf, srcif, srctf, rsf, minkeep = 5):
 	rs = []
 	cache = []
 	curid = 0
+	mapd = ldmap(mapf, minkeep)
 	with open(srcif) as frdi:
 		with open(srctf) as frdt:
 			for line in frdi:
@@ -78,7 +104,7 @@ def handle(srcif, srctf, rsf):
 				if tmp:
 					tmp = tmp.decode("utf-8")
 					if tmp.startswith("<qid_"):
-						rs.append(" ".join(["<qid_"+str(curid)+">", "|||", getans(cache, frdt.readline())]))
+						rs.append(" ".join(["<qid_"+str(curid)+">", "|||", getans(cache, frdt.readline(), mapd)]))
 						cache = []
 						curid += 1
 					else:
@@ -92,4 +118,7 @@ def handle(srcif, srctf, rsf):
 		fwrt.write(rs.encode("utf-8"))
 
 if __name__=="__main__":
-	handle(sys.argv[1].decode("gbk"), sys.argv[2].decode("gbk"), sys.argv[3].decode("gbk"))
+	if len(sys.argv) < 6:
+		handle(sys.argv[1].decode("gbk"), sys.argv[2].decode("gbk"), sys.argv[3].decode("gbk"), sys.argv[4].decode("gbk"))
+	else:
+		handle(sys.argv[1].decode("gbk"), sys.argv[2].decode("gbk"), sys.argv[3].decode("gbk"), sys.argv[4].decode("gbk"), int(sys.argv[5].decode("gbk")))

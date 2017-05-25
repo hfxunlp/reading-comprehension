@@ -1,13 +1,20 @@
 require "nngraph"
 
 return function (osize, hsize, cisize, nlayer)
+	local function onehalfsize(sizein)
+		local rs = math.ceil(sizein * 1.5)
+		if rs % 2 == 1 then
+			rs = rs + 1
+		end
+		return rs
+	end
 	require "deps.vecLookup"
 	require "deps.TableContainer"
 	local qvm = nn.vecLookup(wvec)
 	local pvm = nn.TableContainer(qvm:clone('weight', 'gradWeight', 'bias', 'gradBias'), true)
 	local isize = wvec:size(2)
-	hsize = hsize or isize
-	cisize = cisize or hsize
+	hsize = hsize or onehalfsize(isize)
+	cisize = cisize or onehalfsize(hsize)
 	nlayer = nlayer or 1
 	require "deps.SequenceContainer"
 	require "models.CFHiQATagger"
