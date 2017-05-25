@@ -4,12 +4,14 @@ require "cunn"
 require "cudnn"
 
 local function getonn()
-	wvec = nil
 	--local lmod = loadObject(cntrain).module
 	require "nn"
 	require "nn.Decorator"
 	require "dpnn"
 	local buildQAM=require "models.l2QAM"
+	local _rm=buildQAM(1)
+	_rm=nil
+	wvec = nil
 	local lmod = torch.load(cntrain).modules[1]
 	return lmod
 end
