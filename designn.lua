@@ -5,20 +5,27 @@ require "cudnn"
 
 local function getonn()
 	wvec = nil
-	--local lmod = loadObject("modrs/nnmod.asc").module
-	local lmod = torch.load("modrs/nnmod.asc").module
+	--local lmod = loadObject(cntrain).module
+	require "nn"
+	require "nn.Decorator"
+	require "dpnn"
+	local buildQAM=require "models.l2QAM"
+	local lmod = torch.load(cntrain).modules[1]
 	return lmod
 end
 
 local function getnnn()
 
-	buildQAM=require "models.l2QAM"
+	local buildQAM=require "models.l2QAM"
 	return buildQAM(1)
 end
 
 function getnn()
-	--return getonn()
-	return getnnn()
+	if cntrain then
+		return getonn()
+	else
+		return getnnn()
+	end
 end
 
 function getcrit()

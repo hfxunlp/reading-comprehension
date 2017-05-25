@@ -4,7 +4,14 @@ require"aconf"
 require "utils.Logger"
 require "paths"
 paths.mkdir(logd)
-local logger = Logger(logd.."/"..runid..".log", nil, nil, "w")
+
+local logmod
+if cntrain then
+	logmod = "a"
+else
+	logmod = "w"
+end
+local logger = Logger(logd.."/"..runid..".log", nil, nil, logmod)
 
 logger:log("set default tensor type to float")
 torch.setdefaulttensortype('torch.FloatTensor')

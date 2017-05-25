@@ -84,65 +84,69 @@ function FullTagger:updateOutput(input)
 			curid = curid + nc
 		end
 	end
+	self.doupgi = nil
 	return self.output
 end
 
 function FullTagger:updateGradInput(input, gradOutput)
-	if self.flatten then
-		self.grad_output = gradOutput
-	else
-		local usize = gradOutput[1]:size()
-		local stdsize = torch.LongStorage({self._totalWords, usize[1], usize[2]})
-		if not self.grad_output:isSize(stdsize) then
-			self.grad_output:resize(stdsize)
+	if not self.doupgi then
+		if self.flatten then
+			self.grad_output = gradOutput
+		else
+			local usize = gradOutput[1]:size()
+			local stdsize = torch.LongStorage({self._totalWords, usize[1], usize[2]})
+			if not self.grad_output:isSize(stdsize) then
+				self.grad_output:resize(stdsize)
+			end
+			local curid = 1
+			for _, nc in ipairs(self._nWords) do
+				self.grad_output:narrow(1, curid, nc):copy(gradOutput[_])
+				curid = curid + nc
+			end
+		end
+		local hinput, feat = unpack(input)
+		local gradCache = self.CM:updateGradInput(self.cache, self.grad_output)
+		local _gPEncSize = self.PEnc.output:size()
+		if not self.gradPEnc:isSize(_gPEncSize) then
+			self.gradPEnc:resize(_gPEncSize)
 		end
 		local curid = 1
+		local _gP = gradCache:narrow(2, self._plsind, self._psize)
 		for _, nc in ipairs(self._nWords) do
-			self.grad_output:narrow(1, curid, nc):copy(gradOutput[_])
+			self.gradPEnc[_]:copy(_gP:narrow(1, curid, nc):sum(1))
 			curid = curid + nc
 		end
+		self.gradPEnc:add(gradCache:narrow(2, self._psind, self._psize):sum(1))
+		self.gradFeat, self.gradCell = unpack(self.PEnc:updateGradInput({feat, self.cells}, self.gradPEnc))
+		curid = 1
+		_gP = gradCache:narrow(2, self._clsind, self._csize)
+		for _, nc in ipairs(self._nWords) do
+			self.gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))
+			curid = curid + 1
+		end
+		local _gradInput = {}
+		curid = 1
+		_gP = gradCache:narrow(2, self._csind, self._csize)
+		local _gP1 = gradCache:narrow(2, 1, self._isize)
+		for _, v in ipairs(hinput) do
+			local nc = self._nWords[_]
+			local _curGradO = _gP:narrow(1, curid, nc)
+			_curGradO[-1]:add(self.gradCell[_])
+			local _curGradF, _curGrad = unpack(self:net(_):updateGradInput({feat, v}, _curGradO))
+			_curGrad:add(_gP1:narrow(1, curid, nc))
+			table.insert(_gradInput, _curGrad)
+			self.gradFeat:add(_curGradF)
+			curid = curid + nc
+		end
+		self.gradFeat:add(gradCache:narrow(2, self._fsind, self._fsize):sum(1):squeeze(1))
+		self.gradInput = {_gradInput, self.gradFeat}
+		self.doupgi = true
 	end
-	local hinput, feat = unpack(input)
-	local gradCache = self.CM:updateGradInput(self.cache, self.grad_output)
-	local _gPEncSize = self.PEnc.output:size()
-	if not self.gradPEnc:isSize(_gPEncSize) then
-		self.gradPEnc:resize(_gPEncSize)
-	end
-	local curid = 1
-	local _gP = gradCache:narrow(2, self._plsind, self._psize)
-	for _, nc in ipairs(self._nWords) do
-		self.gradPEnc[_]:copy(_gP:narrow(1, curid, nc):sum(1))
-		curid = curid + nc
-	end
-	self.gradPEnc:add(gradCache:narrow(2, self._psind, self._psize):sum(1))
-	self.gradFeat, self.gradCell = unpack(self.PEnc:updateGradInput({feat, self.cells}, self.gradPEnc))
-	curid = 1
-	_gP = gradCache:narrow(2, self._clsind, self._csize)
-	for _, nc in ipairs(self._nWords) do
-		self.gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))
-		curid = curid + 1
-	end
-	local _gradInput = {}
-	curid = 1
-	_gP = gradCache:narrow(2, self._csind, self._csize)
-	local _gP1 = gradCache:narrow(2, 1, self._isize)
-	for _, v in ipairs(hinput) do
-		local nc = self._nWords[_]
-		local _curGradO = _gP:narrow(1, curid, nc)
-		_curGradO[-1]:add(self.gradCell[_])
-		local _curGradF, _curGrad = unpack(self:net(_):updateGradInput({feat, v}, _curGradO))
-		_curGrad:add(_gP1:narrow(1, curid, nc))
-		table.insert(_gradInput, _curGrad)
-		self.gradFeat:add(_curGradF)
-		curid = curid + nc
-	end
-	self.gradFeat:add(gradCache:narrow(2, self._fsind, self._fsize):sum(1):squeeze(1))
-	self.gradInput = {_gradInput, self.gradFeat}
 	return self.gradInput
 end
 
 function FullTagger:accGradParameters(input, gradOutput, scale)
-	if not (self.grad_output and self.gradPEnc) then
+	if not self.doupgi then
 		self:updateGradInput(input, gradOutput)
 	end
 	self.CM:accGradParameters(self.cache, self.grad_output, scale)
@@ -222,5 +226,6 @@ function FullTagger:clearState()
 	self.gradCell:set()
 	self._nWords = {}
 	self._totalWords = 0
+	self.doupgi = nil
 	return parent.clearState(self)
 end

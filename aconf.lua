@@ -19,3 +19,5 @@ lrdecaycycle=4
 recyclemem=0.05
 
 storedebug=true--store model every epoch or not
+
+cntrain="modrs/170525_gru_l2qf_maxcoll/devnnmod3.asc"

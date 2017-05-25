@@ -25,19 +25,26 @@ function HiEnc:updateOutput(input)
 		end
 	end
 	self.output = self.PEnc:updateOutput(self.cells)
+	self.doupgi = nil
 	return self.output
 end
 
 function HiEnc:updateGradInput(input, gradOutput)
-	self.gradCells = self.PEnc:updateGradInput(self.cells, gradOutput)
-	self.gradInput = {}
-	for _, v in ipairs(input) do
-		table.insert(self:net(_):updateGradInput(v, self.gradCells[_]))
+	if not self.doupgi then
+		self.gradCells = self.PEnc:updateGradInput(self.cells, gradOutput)
+		self.gradInput = {}
+		for _, v in ipairs(input) do
+			table.insert(self:net(_):updateGradInput(v, self.gradCells[_]))
+		end
+		self.doupgi = true
 	end
 	return self.gradInput
 end
 
 function HiEnc:accGradParameters(input, gradOutput, scale)
+	if not self.doupgi then
+		self:updateGradInput(input, gradOutput)
+	end
 	self.PEnc:accGradParameters(self.cells, gradOutput, scale)
 	for _, v in ipairs(input) do
 		self:net(_):accGradParameters(v, self.gradCells[_], scale)
@@ -56,5 +63,6 @@ end
 function HiEnc:clearState()
 	self.cells:set()
 	self.gradCells:set()
+	self.doupgi = nil
 	return parent.clearState(self)
 end
