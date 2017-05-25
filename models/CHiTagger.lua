@@ -98,18 +98,21 @@ function CHiTagger:updateGradInput(input, gradOutput)
 	self.gradPEnc = gradCache:narrow(2, self._psind, self._psize):sum(1):squeeze(1)
 	self.gradCell = self.PEnc:updateGradInput(self.cells, self.gradPEnc)
 	local curid = 1
+	local _gP = gradCache:narrow(2, self._clsind, self._csize)
 	for _, nc in ipairs(self._nWords) do
-		self.gradCell[_]:add(gradCache:narrow(1, curid, nc):narrow(2, self._clsind, self._csize):sum(1))
+		self.gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))
 		curid = curid + 1
 	end
 	self.gradInput = {}
 	curid = 1
+	_gP = gradCache:narrow(2, self._csind, self._csize)
+	local _gP1 = gradCache:narrow(2, 1, self._isize)
 	for _, v in ipairs(input) do
 		local nc = self._nWords[_]
-		local _curGradO = gradCache:narrow(1, curid, nc):narrow(2, self._csind, self._csize)
+		local _curGradO = _gP:narrow(1, curid, nc)
 		_curGradO[-1]:add(self.gradCell[_])
 		local _curGrad = self:net(_):updateGradInput(v, _curGradO)
-		_curGrad:add(gradCache:narrow(1, curid, nc):narrow(2, 1, self._isize))
+		_curGrad:add(_gP1:narrow(1, curid, nc))
 		table.insert(self.gradInput, _curGrad)
 		curid = curid + nc
 	end
@@ -146,18 +149,21 @@ function CHiTagger:backward(input, gradOutput, scale)
 	self.gradPEnc = gradCache:narrow(2, self._psind, self._psize):sum(1):squeeze(1)
 	self.gradCell = self.PEnc:backward(self.cells, self.gradPEnc, scale)
 	local curid = 1
+	local _gP = gradCache:narrow(2, self._clsind, self._csize)
 	for _, nc in ipairs(self._nWords) do
-		self.gradCell[_]:add(gradCache:narrow(1, curid, nc):narrow(2, self._clsind, self._csize):sum(1))
+		self.gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))
 		curid = curid + 1
 	end
 	self.gradInput = {}
 	curid = 1
+	_gP = gradCache:narrow(2, self._csind, self._csize)
+	local _gP1 = gradCache:narrow(2, 1, self._isize)
 	for _, v in ipairs(input) do
 		local nc = self._nWords[_]
-		local _curGradO = gradCache:narrow(1, curid, nc):narrow(2, self._csind, self._csize)
+		local _curGradO = _gP:narrow(1, curid, nc)
 		_curGradO[-1]:add(self.gradCell[_])
 		local _curGrad = self:net(_):backward(v, _curGradO, scale)
-		_curGrad:add(gradCache:narrow(1, curid, nc):narrow(2, 1, self._isize))
+		_curGrad:add(_gP1:narrow(1, curid, nc))
 		table.insert(self.gradInput, _curGrad)
 		curid = curid + nc
 	end
