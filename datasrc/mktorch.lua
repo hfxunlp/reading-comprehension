@@ -42,6 +42,31 @@ function conjson(fname)
 		rs[rs:eq(0)]=-1 --2 for Multi-Margin, -1 for Margin
 		return rs
 	end
+	local function getarg(x, tin)
+		local vocab = {}
+		local curid = 1
+		local curwd = 1
+		local fscore = tin:reshape(tin:size(1)):totable()
+		local fnd = nil
+		for _, sent in ipairs(x) do
+			for __, wd in ipairs(sent:reshape(sent:size(1)):totable()) do
+				if not vocab[wd] then
+					vocab[wd] = curid
+					curid = curid + 1
+				end
+				if fscore[curwd] or 1 == 1 then
+					fnd = wd
+					break
+				else
+					curwd = curwd + 1
+				end
+			end
+			if fnd then
+				break
+			end
+		end
+		return torch.IntTensor({vocab[fnd] or curid - 1})
+	end
 	local file=io.open(fname)
 	local rs=tds.Vec()
 	local lind=file:read("*l")
@@ -49,7 +74,9 @@ function conjson(fname)
 	while lind do
 		local data=json.decode(lind)
 		local id, qd, td=unpack(data)
-		rs[curd]=tds.Vec(convt(id), torch.IntTensor(qd):reshape(#qd, 1), fconvt(td))
+		id = convt(id)
+		td = getarg(id, fconvt(td))
+		rs[curd]=tds.Vec(id, torch.IntTensor(qd):reshape(#qd, 1), td)
 		lind=file:read("*l")
 		curd=curd+1
 	end
@@ -57,4 +84,4 @@ function conjson(fname)
 	return rs
 end
 
-torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec.txt", 50)), 'binary', false)
+torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_128.txt", 128)), 'binary', false)

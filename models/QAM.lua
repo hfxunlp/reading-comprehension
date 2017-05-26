@@ -13,7 +13,7 @@ return function (osize, hsize, cisize, nlayer)
 	local qvm = nn.vecLookup(wvec)
 	local pvm = nn.TableContainer(qvm:clone('weight', 'gradWeight', 'bias', 'gradBias'), true)
 	local isize = wvec:size(2)
-	hsize = hsize or onehalfsize(isize)
+	hsize = hsize or isize
 	cisize = cisize or onehalfsize(hsize)
 	nlayer = nlayer or 1
 	require "deps.SequenceContainer"

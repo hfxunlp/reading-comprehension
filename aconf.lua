@@ -1,6 +1,6 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170525_gru_l2qf_maxcoll"
+runid="170526_gru_l2qf_aoacoll"
 logd="logs"
 
 ieps=1
@@ -20,4 +20,8 @@ recyclemem=0.05
 
 storedebug=true--store model every epoch or not
 
-cntrain="modrs/170525_gru_l2qf_maxcoll/devnnmod3.asc"
+cntrain=nil--"modrs/170525_gru_l2qf_maxcoll/devnnmod3.asc"
+
+if cntrain then
+	warmcycle=0
+end

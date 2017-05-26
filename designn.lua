@@ -8,7 +8,7 @@ local function getonn()
 	require "nn"
 	require "nn.Decorator"
 	require "dpnn"
-	local buildQAM=require "models.l2QAM"
+	local buildQAM=require "models.PFull2QAM"
 	local _rm=buildQAM(1)
 	_rm=nil
 	wvec = nil
@@ -18,7 +18,7 @@ end
 
 local function getnnn()
 
-	local buildQAM=require "models.l2QAM"
+	local buildQAM=require "models.PFull2QAM"
 	return buildQAM(1)
 end
 
@@ -31,5 +31,6 @@ function getnn()
 end
 
 function getcrit()
-	return nn.MultiMarginCriterion();
+	return nn.ClassNLLCriterion();
+	--return nn.MultiMarginCriterion();
 end

@@ -20,7 +20,7 @@ return function (osize, hsize, cisize, nlayer, hidsize)
 	local qvm = nn.vecLookup(wvec)
 	local pvm = nn.TableContainer(qvm:clone('weight', 'gradWeight', 'bias', 'gradBias'), true)
 	local isize = wvec:size(2)
-	hsize = hsize or onehalfsize(isize)
+	hsize = hsize or isize
 	cisize = cisize or onehalfsize(hsize)
 	nlayer = nlayer or 1
 	require "deps.SequenceContainer"
@@ -39,7 +39,7 @@ return function (osize, hsize, cisize, nlayer, hidsize)
 	local clsm = nn.Sequential()
 		:add(nn.PScore(clsm_core))
 		:add(nn.AoA())
-	local corem = nn.FullTagger(SentEnc, PEnc, clsm, true, isize)
+	local corem = nn.PFullTagger(SentEnc, PEnc, clsm, true, isize)
 	local inputp = nn.Identity()()
 	local inputq = nn.Identity()()
 	local vp = pvm(inputp)--()
@@ -50,6 +50,7 @@ return function (osize, hsize, cisize, nlayer, hidsize)
 	local _output = corem({vp, qfeat})
 	require "deps.Coll"
 	local output = nn.Coll()({inputp, _output})
+	output = nn.Log()(output)
 	return nn.gModule({inputp, inputq}, {output})
 	--return nn.gModule({vp, vq}, {output})
 end

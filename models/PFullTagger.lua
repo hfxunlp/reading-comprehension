@@ -13,6 +13,7 @@ function PFullTagger:__init(SentEnc, PEnc, Classifier, flatten, ploc)
 	self.cache = torch.Tensor()
 	self.grad_output = torch.Tensor()
 	self.gradPEnc = torch.Tensor()
+	self.gradSEnc = torch.Tensor()
 	self.train = true
 	self.ploc = ploc or 0
 end
@@ -122,7 +123,7 @@ function PFullTagger:updateGradInput(input, gradOutput)
 			self.gradPEnc[_]:copy(_gP:narrow(1, curid, nc):sum(1))
 			curid = curid + nc
 		end
-		self.gradPEnc:add(gradCache:narrow(2, self._psind, self._psize):sum(1))
+		self.gradPEnc[-1]:add(gradCache:narrow(2, self._psind, self._psize):sum(1))
 		local _gradFeat
 		_gradFeat, self.gradCell = unpack(self.PEnc:updateGradInput({feat, self.cells}, self.gradPEnc))
 		_gPFeat:add(_gradFeat)
@@ -134,11 +135,11 @@ function PFullTagger:updateGradInput(input, gradOutput)
 		end
 		local _gradInput = {}
 		curid = 1
-		_gP = gradCache:narrow(2, self._csind, self._csize)
+		self.gradSEnc = gradCache:narrow(2, self._csind, self._csize)
 		local _gP1 = gradCache:narrow(2, self._sind, self._isize)
 		for _, v in ipairs(hinput) do
 			local nc = self._nWords[_]
-			local _curGradO = _gP:narrow(1, curid, nc)
+			local _curGradO = self.gradSEnc:narrow(1, curid, nc)
 			_curGradO[-1]:add(self.gradCell[_])
 			local _curGradF, _curGrad = unpack(self:net(_):updateGradInput({feat, v}, _curGradO))
 			_curGrad:add(_gP1:narrow(1, curid, nc))
@@ -157,11 +158,15 @@ function PFullTagger:accGradParameters(input, gradOutput, scale)
 	if not self.doupgi then
 		self:updateGradInput(input, gradOutput)
 	end
-	self.CM:accGradParameters(self.cache, self.grad_output, scale)
-	self.PEnc:accGradParameters(self.cells, self.gradPEnc, scale)
-	local hinput, feat = unpack(input)
+	local hinput, feat_full = unpack(input)
+	local feat = feat_full[-1]
+	self.CM:accGradParameters({self.cache, feat_full}, self.grad_output, scale)
+	self.PEnc:updateGradInput({feat, self.cells}, self.gradPEnc)
+	curid = 1
 	for _, v in ipairs(hinput) do
-		self:net(_):accGradParameters({feat, v}, self.gradCell[_], scale)
+		local nc = self._nWords[_]
+		self:net(_):accGradParameters({feat, v}, self.gradSEnc:narrow(1, curid, nc), scale)
+		curid = curid + nc
 	end
 end
 
@@ -195,7 +200,7 @@ function PFullTagger:backward(input, gradOutput, scale)
 		self.gradPEnc[_]:copy(_gP:narrow(1, curid, nc):sum(1))
 		curid = curid + nc
 	end
-	self.gradPEnc:add(gradCache:narrow(2, self._psind, self._psize):sum(1))
+	self.gradPEnc[-1]:add(gradCache:narrow(2, self._psind, self._psize):sum(1))
 	local _gradFeat
 	_gradFeat, self.gradCell = unpack(self.PEnc:backward({feat, self.cells}, self.gradPEnc, scale))
 	_gPFeat:add(_gradFeat)
@@ -207,11 +212,11 @@ function PFullTagger:backward(input, gradOutput, scale)
 	end
 	local _gradInput = {}
 	curid = 1
-	_gP = gradCache:narrow(2, self._csind, self._csize)
+	self.gradSEnc = gradCache:narrow(2, self._csind, self._csize)
 	local _gP1 = gradCache:narrow(2, self._sind, self._isize)
 	for _, v in ipairs(hinput) do
 		local nc = self._nWords[_]
-		local _curGradO = _gP:narrow(1, curid, nc)
+		local _curGradO = self.gradSEnc:narrow(1, curid, nc)
 		_curGradO[-1]:add(self.gradCell[_])
 		local _curGradF, _curGrad = unpack(self:net(_):backward({feat, v}, _curGradO, scale))
 		_curGrad:add(_gP1:narrow(1, curid, nc))
@@ -221,6 +226,7 @@ function PFullTagger:backward(input, gradOutput, scale)
 	end
 	_gPFeat:add(gradCache:narrow(2, self._fsind, self._fsize):sum(1):squeeze(1))
 	self.gradInput = {_gradInput, self.gradFeat}
+	self.doupgi = true
 	return self.gradInput
 end
 
@@ -237,6 +243,7 @@ function PFullTagger:clearState()
 	self.gradPEnc:set()
 	self.gradFeat:set()
 	self.gradCell:set()
+	self.gradSEnc:set()
 	self._nWords = {}
 	self._totalWords = 0
 	self.doupgi = nil

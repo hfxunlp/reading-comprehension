@@ -23,32 +23,6 @@ local function train(trainset, devset, memlimit, storevery)
 
 	local function _train(trainset, devset, memlimit)
 
-		local function getarg(x, tin)
-			local vocab = {}
-			local curid = 1
-			local curwd = 1
-			local fscore = tin:reshape(tin:size(1)):totable()
-			local fnd = nil
-			for _, sent in ipairs(x) do
-				for __, wd in ipairs(sent:reshape(sent:size(1)):totable()) do
-					if not vocab[wd] then
-						vocab[wd] = curid
-						curid = curid + 1
-					end
-					if fscore[curwd] or 1 == 1 then
-						fnd = wd
-						break
-					else
-						curwd = curwd + 1
-					end
-				end
-				if fnd then
-					break
-				end
-			end
-			return torch.Tensor({vocab[fnd] or curid - 1})
-		end
-
 		logger:log("pre load package")
 		require "nn"
 		require "nn.Decorator"
@@ -114,8 +88,7 @@ local function train(trainset, devset, memlimit, storevery)
 			local serr=0
 			xlua.progress(0, ndev)
 			for i,devu in ipairs(devdata) do
-				local passage = devu[1]
-				serr=serr+criterionin:forward(mlpin:forward({mkcudaLong(passage), devu[2]:cudaLong()}), getarg(passage, devu[3]):cudaLong())
+				serr=serr+criterionin:forward(mlpin:forward({mkcudaLong(devu[1]), devu[2]:cudaLong()}), devu[3]:cudaLong())
 				xlua.progress(i, ndev)
 			end
 			mlpin:training()
@@ -196,8 +169,7 @@ local function train(trainset, devset, memlimit, storevery)
 			for tmpj=1,ieps do
 				xlua.progress(0, ntrain)
 				for i,trainu in ipairs(trainset) do
-					local passage = trainu[1]
-					gradUpdate(nnmod,{mkcudaLong(passage), trainu[2]:cudaLong()},getarg(passage, trainu[3]):cudaLong(),critmod,lr,optmethod,memlimit)
+					gradUpdate(nnmod,{mkcudaLong(trainu[1]), trainu[2]:cudaLong()}, trainu[3]:cudaLong(),critmod,lr,optmethod,memlimit)
 					xlua.progress(i, ntrain)
 				end
 			end
@@ -234,8 +206,7 @@ local function train(trainset, devset, memlimit, storevery)
 				for tmpi=1,ieps do
 					xlua.progress(0, ntrain)
 					for i,trainu in ipairs(trainset) do
-						local passage = trainu[1]
-						gradUpdate(nnmod,{mkcudaLong(passage), trainu[2]:cudaLong()},getarg(passage, trainu[3]):cudaLong(),critmod,lr,optmethod,memlimit)
+						gradUpdate(nnmod,{mkcudaLong(trainu[1]), trainu[2]:cudaLong()}, trainu[3]:cudaLong(),critmod,lr,optmethod,memlimit)
 						xlua.progress(i, ntrain)
 					end
 				end

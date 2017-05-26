@@ -1,6 +1,6 @@
-local modf = "modrs/170524_gru_qf_coll/nnmod.asc" -- model file
+local modf = "modrs/170525_gru_l2qf_maxcoll/devnnmod3.asc" -- model file
 local tif = "datasrc/duse/valid.data" -- test input, json format
-local rsf = "test/canscore.txt" -- result score file
+local rsf = "test/mcanscore.txt" -- result score file
 
 torch.setdefaulttensortype('torch.FloatTensor')
 
@@ -58,7 +58,7 @@ require "models.CFHiQATagger"
 
 local tmod_full = torch.load(modf)
 local tmod = tmod_full.modules[1]
-
+tmod:evaluate()
 local tdata = ldjson(tif)
 
 local file = io.open(rsf, "w")

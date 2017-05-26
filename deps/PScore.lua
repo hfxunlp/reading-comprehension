@@ -25,9 +25,9 @@ function PScore:updateOutput(input)
 	if not self._qsize then
 		self._qsize = question:size(3)
 		self._sind = self._qsize + 1
-		self._slen = extpas:size(3) - self._qsize
+		self._slen = extpas:size(2) - self._qsize
 	end
-	local _cP = extpas:narrow(3, 1, self._qsize)
+	local _cP = extpas:narrow(2, 1, self._qsize)
 	for _ = 1, qlen do
 		_cP:copy(expandT(question[_], plen))
 		self.output:select(2, _):copy(self:net(_):updateOutput(extpas))
@@ -40,19 +40,19 @@ function PScore:updateGradInput(input, gradOutput)
 
 	local extpas, question = unpack(input)
 	if not self.gradQ:isSize(question:size()) then
-		self.gradQ:resizeAs(question):zero()
+		self.gradQ:resizeAs(question)
 	end
-	if not self.gradP:isSize(extpas) then
+	if not self.gradP:isSize(extpas:size()) then
 		self.gradP:resizeAs(extpas):zero()
 	end
 	local plen = extpas:size(1)
-	local _cP = extpas:narrow(3, 1, self._qsize)
-	local _gP = self.gradP:narrow(3, self._sind, self._slen)
+	local _cP = extpas:narrow(2, 1, self._qsize)
+	local _gP = self.gradP:narrow(2, self._sind, self._slen)
 	for _ = 1, question:size(1) do
 		_cP:copy(expandT(question[_], plen))
-		local _curG = self:net(_):updateGradInput(extpas, gradOutput:select(2, _))
-		self.gradQ:add(_curG:narrow(3, 1, self._qsize))
-		_gP:add(_curG:narrow(3, self._sind, self._slen))
+		local _curG = self:net(_):updateGradInput(extpas, gradOutput:narrow(2, _, 1))
+		self.gradQ[_]:copy(_curG:narrow(2, 1, self._qsize):sum(1))
+		_gP:add(_curG:narrow(2, self._sind, self._slen))
 	end
 	self.gradInput = {self.gradP, self.gradQ}
 
@@ -62,10 +62,10 @@ end
 function PScore:accGradParameters(input, gradOutput, scale)
 	local extpas, question = unpack(input)
 	local plen = extpas:size(1)
-	local _cP = extpas:narrow(3, 1, self._qsize)
+	local _cP = extpas:narrow(2, 1, self._qsize)
 	for _ = 1, question:size(1) do
 		_cP:copy(expandT(question[_], plen))
-		self:net(_):accGradParameters(extpas, gradOutput:select(2, _), scale)
+		self:net(_):accGradParameters(extpas, gradOutput:narrow(2, _, 1), scale)
 	end
 end
 
@@ -73,19 +73,19 @@ function PScore:backward(input, gradOutput, scale)
 
 	local extpas, question = unpack(input)
 	if not self.gradQ:isSize(question:size()) then
-		self.gradQ:resizeAs(question):zero()
+		self.gradQ:resizeAs(question)
 	end
-	if not self.gradP:isSize(extpas) then
+	if not self.gradP:isSize(extpas:size()) then
 		self.gradP:resizeAs(extpas):zero()
 	end
 	local plen = extpas:size(1)
-	local _cP = extpas:narrow(3, 1, self._qsize)
-	local _gP = self.gradP:narrow(3, self._sind, self._slen)
+	local _cP = extpas:narrow(2, 1, self._qsize)
+	local _gP = self.gradP:narrow(2, self._sind, self._slen)
 	for _ = 1, question:size(1) do
 		_cP:copy(expandT(question[_], plen))
-		local _curG = self:net(_):backward(extpas, gradOutput:select(2, _), scale)
-		self.gradQ:add(_curG:narrow(3, 1, self._qsize))
-		_gP:add(_curG:narrow(3, self._sind, self._slen))
+		local _curG = self:net(_):backward(extpas, gradOutput:narrow(2, _, 1), scale)
+		self.gradQ[_]:copy(_curG:narrow(2, 1, self._qsize):sum(1))
+		_gP:add(_curG:narrow(2, self._sind, self._slen))
 	end
 	self.gradInput = {self.gradP, self.gradQ}
 
