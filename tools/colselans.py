@@ -27,7 +27,7 @@ def getans_mwd(pas, scl, mapd):
 	tmp = tmp.decode("utf-8")
 	s = [float(tmpu) for tmpu in tmp.split()]
 	rsd = {}
-	allwd = set()
+	allwd = {}
 	if s:
 		for sent in pas:
 			cnt = False
@@ -37,15 +37,16 @@ def getans_mwd(pas, scl, mapd):
 					wid = mapd.get(tmp, 1)
 					if not wid in allwd:
 						if s:
-							rsd[tmp] = s[0]
+							allwd[wid] = s[0]
 							del s[0]
-							allwd.add(wid)
 							if not s:
 								cnt=True
 								break
 						else:
 							cnt=True
 							break
+					if wid in allwd and tmp not in rsd:
+						rsd[tmp]=allwd[wid]
 			if cnt:
 				break
 		rsw = rsd.keys()[0]
