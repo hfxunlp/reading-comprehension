@@ -84,4 +84,4 @@ function conjson(fname)
 	return rs
 end
 
-torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_128.txt", 128)), 'binary', false)
+torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_192.txt", 192)), 'binary', false)
