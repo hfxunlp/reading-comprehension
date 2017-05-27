@@ -15,7 +15,6 @@ function CPFullTagger:__init(SentEnc, PEnc, Classifier, flatten, ploc)
 	self.gradPEnc = torch.Tensor()
 	self.gradSEnc = torch.Tensor()
 	self.gradFeat = torch.Tensor()
-	self.train = true
 	self.ploc = ploc or 0
 end
 
@@ -139,12 +138,13 @@ function CPFullTagger:updateGradInput(input, gradOutput)
 			curid = curid + nc
 		end
 		self.gradPEnc[-1]:narrow(2, self._spind, self._psize):copy(gradCache:narrow(2, self._psind, self._psize):sum(1))--传递篇章特征误差
-		_gP, self.gradCell = unpack(self.PEnc:updateGradInput({feat, self.cells}, self.gradPEnc))--篇章编码器反向传播
+		local gradCell
+		_gP, gradCell = unpack(self.PEnc:updateGradInput({feat, self.cells}, self.gradPEnc))--篇章编码器反向传播
 		_gPFeat:copy(_gP)--传递问题特征误差
 		curid = 1
 		_gP = gradCache:narrow(2, self._clsind, self._csize)--锁定句特征误差
 		for _, nc in ipairs(self._nWords) do
-			self.gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))--累积来自分类器的句特征误差
+			gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))--累积来自分类器的句特征误差
 			curid = curid + 1
 		end
 		local stdSize = torch.LongStorage({self._totalWords, 1, self._gcsize})
@@ -161,7 +161,7 @@ function CPFullTagger:updateGradInput(input, gradOutput)
 		for _, v in ipairs(hinput) do
 			local nc = self._nWords[_]
 			sid = sid + nc
-			_gP[sid]:copy(self.gradCell[_])--传递到句特征的误差
+			_gP[sid]:copy(gradCell[_])--传递到句特征的误差
 			local _curGradF, _curGrad = unpack(self:net(_):updateGradInput({feat, v}, self.gradSEnc:narrow(1, curid, nc)))--句编码器反向传播
 			_curGrad:add(_gP1:narrow(1, curid, nc))--累加来自分类器的误差
 			table.insert(_gradInput, _curGrad)
@@ -230,12 +230,13 @@ function CPFullTagger:backward(input, gradOutput, scale)
 		curid = curid + nc
 	end
 	self.gradPEnc[-1]:narrow(2, self._spind, self._psize):copy(gradCache:narrow(2, self._psind, self._psize):sum(1))--传递篇章特征误差
-	_gP, self.gradCell = unpack(self.PEnc:backward({feat, self.cells}, self.gradPEnc, scale))--篇章编码器反向传播
+	local gradCell
+	_gP, gradCell = unpack(self.PEnc:backward({feat, self.cells}, self.gradPEnc, scale))--篇章编码器反向传播
 	_gPFeat:copy(_gP)--传递问题特征误差
 	curid = 1
 	_gP = gradCache:narrow(2, self._clsind, self._csize)--锁定句特征误差
 	for _, nc in ipairs(self._nWords) do
-		self.gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))--累积来自分类器的句特征误差
+		gradCell[_]:add(_gP:narrow(1, curid, nc):sum(1))--累积来自分类器的句特征误差
 		curid = curid + 1
 	end
 	local stdSize = torch.LongStorage({self._totalWords, 1, self._gcsize})
@@ -252,7 +253,7 @@ function CPFullTagger:backward(input, gradOutput, scale)
 	for _, v in ipairs(hinput) do
 		local nc = self._nWords[_]
 		sid = sid + nc
-		_gP[sid]:copy(self.gradCell[_])--传递到句特征的误差
+		_gP[sid]:copy(gradCell[_])--传递到句特征的误差
 		local _curGradF, _curGrad = unpack(self:net(_):backward({feat, v}, self.gradSEnc:narrow(1, curid, nc), scale))--句编码器反向传播
 		_curGrad:add(_gP1:narrow(1, curid, nc))--累加来自分类器的误差
 		table.insert(_gradInput, _curGrad)
@@ -277,7 +278,6 @@ function CPFullTagger:clearState()
 	self.grad_output:set()
 	self.gradPEnc:set()
 	self.gradFeat:set()
-	self.gradCell:set()
 	self.gradSEnc:set()
 	self._nWords = {}
 	self._totalWords = 0

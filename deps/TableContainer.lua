@@ -189,7 +189,7 @@ function TableContainer:updateGradInput(input, gradOutput)
 		end
 	else
 		for _, v in ipairs(gradOutput) do
-			self.gradInput[_] = self:net(_):updateGradInput(input[_], v):clone()
+			self.gradInput[_] = self:net(_):updateGradInput(input[_], v)
 		end
 	end
 	return self.gradInput
@@ -213,16 +213,14 @@ function TableContainer:backward(input, gradOutput, scale)
 		end
 	else
 		for _, v in ipairs(gradOutput) do
-			self.gradInput[_] = self:net(_):backward(input[_], v, scale):clone()
+			self.gradInput[_] = self:net(_):backward(input[_], v, scale)
 		end
 	end
 	return self.gradInput
 end
 
 function TableContainer:training()
-	for _, m in ipairs(self.nets) do
-		m:training()
-	end
+	self:net(1):training()
 	parent.training(self)
 end
 

@@ -24,7 +24,7 @@ function MaxColl:updateOutput(input)
 			else
 				wid = self.vocab[wd]
 			end
-			local curscore = _fscore[curwd] or 0
+			local curscore = _fscore[curwd] or -math.huge
 			if not score[wid] then
 				score[wid] = curscore
 				self.mid[wd] = curwd

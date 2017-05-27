@@ -83,36 +83,25 @@ local function train(trainset, devset, memlimit, storevery)
 			return rs
 		end
 
-		local function evaDev(mlpin, criterionin,devdata)
+		local function evaDev(mlpin, criterionin, devdata)
 			mlpin:evaluate()
 			local serr=0
 			xlua.progress(0, ndev)
-			for i,devu in ipairs(devdata) do
+			for _, devu in ipairs(devdata) do
 				serr=serr+criterionin:forward(mlpin:forward({mkcudaLong(devu[1]), devu[2]:cudaLong()}), devu[3]:cudaLong())
-				xlua.progress(i, ndev)
+				xlua.progress(_, ndev)
 			end
 			mlpin:training()
 			return serr/ndev
 		end
 
 		local function saveObject(fname,objWrt)
-
-			--[[local function clearModule(module)
-				module:apply(function(m)
-					if m.clearState and not torch.isTypeOf(m, "nn.gModule") then
-						m:clearState()
-					end
-				end)
-				return module
-			end]]
-
 			if torch.isTypeOf(objWrt, "nn.Module") then
 				objWrt:clearState()
 				torch.save(fname, objWrt, 'binary', true)
 			else
 				torch.save(fname, objWrt, 'binary', false)
 			end
-
 		end
 
 		local crithis={}
@@ -185,7 +174,6 @@ local function train(trainset, devset, memlimit, storevery)
 
 		if warmcycle>0 then
 			logger:log("save neural network trained")
-			--savennmod:clearState()
 			saveObject(savedir.."nnmod.asc",savennmod)
 		end
 
@@ -221,7 +209,6 @@ local function train(trainset, devset, memlimit, storevery)
 					mindeverrate=edevrate
 					amindeverr=1
 					aminerr=1--reset aminerr at the same time
-					--savennmod:clearState()
 					saveObject(savedir.."devnnmod"..storedevmini..".asc",savennmod)
 					storedevmini=storedevmini+1
 					if storedevmini>csave then
@@ -241,7 +228,6 @@ local function train(trainset, devset, memlimit, storevery)
 					minerrate=erate
 					aminerr=1
 					if not modsavd then
-						--savennmod:clearState()
 						saveObject(savedir.."nnmod"..storemini..".asc",savennmod)
 						storemini=storemini+1
 						if storemini>csave then
