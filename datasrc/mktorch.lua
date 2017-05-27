@@ -38,8 +38,8 @@ function conjson(fname)
 				table.insert(rs, r)
 			end
 		end
-		rs=torch.FloatTensor(rs)
-		rs[rs:eq(0)]=-1 --2 for Multi-Margin, -1 for Margin
+		rs=torch.IntTensor(rs)
+		--rs[rs:eq(0)]=-1 --2 for Multi-Margin, -1 for Margin
 		return rs
 	end
 	local function getarg(x, tin)
@@ -54,7 +54,7 @@ function conjson(fname)
 					vocab[wd] = curid
 					curid = curid + 1
 				end
-				if fscore[curwd] or 1 == 1 then
+				if (fscore[curwd] or 1) == 1 then
 					fnd = wd
 					break
 				else
@@ -65,7 +65,7 @@ function conjson(fname)
 				break
 			end
 		end
-		return torch.IntTensor({vocab[fnd] or curid - 1})
+		return torch.IntTensor({vocab[fnd] or (curid - 1)})
 	end
 	local file=io.open(fname)
 	local rs=tds.Vec()
@@ -83,5 +83,7 @@ function conjson(fname)
 	file:close()
 	return rs
 end
+
+--torch.save("debug.asc",conjson("duse/valid.data"))
 
 torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_192.txt", 192)), 'binary', false)

@@ -25,7 +25,7 @@ function Coll:updateOutput(input)
 			end
 			local curscore = _fscore[curwd] or 0
 			curwd = curwd + 1
-			score[wid] = score[wid] or 0 + curscore
+			score[wid] = (score[wid] or 0) + curscore
 		end
 	end
 	self.output = torch.Tensor(score):typeAs(fscore)
