@@ -1,5 +1,5 @@
 require "nn"
-buildQAM=require "models.QAM"
+buildQAM=require "models.CPFull2QAM"
 
 function clearModule(module)
 	module:apply(function(m)

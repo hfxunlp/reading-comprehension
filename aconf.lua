@@ -1,10 +1,10 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170526_gru_l2qf_aoacoll"
+runid="170527_gru_l2cqf_aoacoll"
 logd="logs"
 
 ieps=1
-warmcycle=1
+warmcycle=0
 expdecaycycle=4
 gtraincycle=32
 

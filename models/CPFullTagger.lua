@@ -14,6 +14,7 @@ function CPFullTagger:__init(SentEnc, PEnc, Classifier, flatten, ploc)
 	self.grad_output = torch.Tensor()
 	self.gradPEnc = torch.Tensor()
 	self.gradSEnc = torch.Tensor()
+	self.gradFeat = torch.Tensor()
 	self.train = true
 	self.ploc = ploc or 0
 end
@@ -28,7 +29,7 @@ function CPFullTagger:updateOutput(input)
 	end
 	local hinput, feat_full_c = unpack(input)--输入篇章向量以及问题向量
 	local feat_full = feat_full_c:narrow(3, 1, self._fsize or feat_full_c:size(3)/2)--取出问题词向量
-	local feat = feat_full[-1]:narrow(3, self._sqind or feat_full_c:size(3)/2 + 1, self._fsize or feat_full_c:size(3)/2)--取出问题向量
+	local feat = feat_full_c[-1]:narrow(2, self._sqind or feat_full:size(3) + 1, self._fsize or feat_full:size(3))--取出问题向量
 	local seql = #hinput--输入篇章中句子数量
 	local _output = self:net(1):updateOutput({feat, hinput[1]})[-1]--取出句子编码器中最后一个向量
 	local _osize = _output:size()--获取句子编码器输出尺寸
@@ -61,7 +62,7 @@ function CPFullTagger:updateOutput(input)
 		self._cachedim = self.ploc + self._isize + self._csize * 2 + self._psize * 2 + self._fsize--cache尺寸
 	end
 	local _pEnc_full = _pEnc_full_c:narrow(3, 1, self._psize)--篇章句特征
-	local _pEnc = _pEnc_full_c[-1]:narrow(3, self._spind, self._psize)--篇章特征
+	local _pEnc = _pEnc_full_c[-1]:narrow(2, self._spind, self._psize)--篇章特征
 	self._nWords = {}
 	self._totalWords = 0
 	for _, v in ipairs(hinput) do
@@ -117,14 +118,14 @@ function CPFullTagger:updateGradInput(input, gradOutput)
 		end
 		local hinput, feat_full_c = unpack(input)--输入篇章向量以及问题向量
 		local feat_full = feat_full_c:narrow(3, 1, self._fsize)--取出问题词向量
-		local feat = feat_full[-1]:narrow(3, self._sqind, self._fsize)--取出问题向量
+		local feat = feat_full_c[-1]:narrow(2, self._sqind, self._fsize)--取出问题向量
 		if not self.gradFeat:isSize(feat_full_c:size()) then
 			self.gradFeat:resizeAs(feat_full_c)
 		end
 		self.gradFeat:narrow(3, self._sqind, self._fsize):zero()--准备到feat的grad
 		local gradCache, _gP = unpack(self.CM:updateGradInput({self.cache, feat_full}, self.grad_output))--分类模型反向传播
 		self.gradFeat:narrow(3, 1, self._fsize):copy(_gP)--传递到问题词特征的误差
-		local _gPFeat = self.gradFeat[-1]:narrow(3, self._sqind, self._fsize)--锁定问题特征的误差
+		local _gPFeat = self.gradFeat[-1]:narrow(2, self._sqind, self._fsize)--锁定问题特征的误差
 		local _gPEncSize = self.PEnc.output:size()
 		if not self.gradPEnc:isSize(_gPEncSize) then
 			self.gradPEnc:resize(_gPEncSize)
@@ -137,7 +138,7 @@ function CPFullTagger:updateGradInput(input, gradOutput)
 			_gP1[_]:copy(_gP:narrow(1, curid, nc):sum(1))
 			curid = curid + nc
 		end
-		self.gradPEnc[-1]:narrow(3, self._spind, self._psize):copy(gradCache:narrow(2, self._psind, self._psize):sum(1))--传递篇章特征误差
+		self.gradPEnc[-1]:narrow(2, self._spind, self._psize):copy(gradCache:narrow(2, self._psind, self._psize):sum(1))--传递篇章特征误差
 		_gP, self.gradCell = unpack(self.PEnc:updateGradInput({feat, self.cells}, self.gradPEnc))--篇章编码器反向传播
 		_gPFeat:copy(_gP)--传递问题特征误差
 		curid = 1
@@ -180,7 +181,7 @@ function CPFullTagger:accGradParameters(input, gradOutput, scale)
 	end
 	local hinput, feat_full_c = unpack(input)
 	local feat_full = feat_full_c:narrow(3, 1, self._fsize)
-	local feat = feat_full[-1]:narrow(3, self._sqind, self._fsize)
+	local feat = feat_full_c[-1]:narrow(2, self._sqind, self._fsize)
 	self.CM:accGradParameters({self.cache, feat_full}, self.grad_output, scale)
 	self.PEnc:accGradParameters({feat, self.cells}, self.gradPEnc, scale)
 	local curid = 1
@@ -195,7 +196,7 @@ function CPFullTagger:backward(input, gradOutput, scale)
 	if self.flatten then
 		self.grad_output = gradOutput
 	else
-		local usize = gradOutput[1]:size()
+	local usize = gradOutput[1]:size()
 		local stdSize = torch.LongStorage({self._totalWords, usize[1], usize[2]})
 		if not self.grad_output:isSize(stdSize) then
 			self.grad_output:resize(stdSize)
@@ -208,14 +209,14 @@ function CPFullTagger:backward(input, gradOutput, scale)
 	end
 	local hinput, feat_full_c = unpack(input)--输入篇章向量以及问题向量
 	local feat_full = feat_full_c:narrow(3, 1, self._fsize)--取出问题词向量
-	local feat = feat_full[-1]:narrow(3, self._sqind, self._fsize)--取出问题向量
+	local feat = feat_full_c[-1]:narrow(2, self._sqind, self._fsize)--取出问题向量
 	if not self.gradFeat:isSize(feat_full_c:size()) then
 		self.gradFeat:resizeAs(feat_full_c)
 	end
 	self.gradFeat:narrow(3, self._sqind, self._fsize):zero()--准备到feat的grad
 	local gradCache, _gP = unpack(self.CM:backward({self.cache, feat_full}, self.grad_output, scale))--分类模型反向传播
 	self.gradFeat:narrow(3, 1, self._fsize):copy(_gP)--传递到问题词特征的误差
-	local _gPFeat = self.gradFeat[-1]:narrow(3, self._sqind, self._fsize)--锁定问题特征的误差
+	local _gPFeat = self.gradFeat[-1]:narrow(2, self._sqind, self._fsize)--锁定问题特征的误差
 	local _gPEncSize = self.PEnc.output:size()
 	if not self.gradPEnc:isSize(_gPEncSize) then
 		self.gradPEnc:resize(_gPEncSize)
@@ -228,7 +229,7 @@ function CPFullTagger:backward(input, gradOutput, scale)
 		_gP1[_]:copy(_gP:narrow(1, curid, nc):sum(1))
 		curid = curid + nc
 	end
-	self.gradPEnc[-1]:narrow(3, self._spind, self._psize):copy(gradCache:narrow(2, self._psind, self._psize):sum(1))--传递篇章特征误差
+	self.gradPEnc[-1]:narrow(2, self._spind, self._psize):copy(gradCache:narrow(2, self._psind, self._psize):sum(1))--传递篇章特征误差
 	_gP, self.gradCell = unpack(self.PEnc:backward({feat, self.cells}, self.gradPEnc, scale))--篇章编码器反向传播
 	_gPFeat:copy(_gP)--传递问题特征误差
 	curid = 1
