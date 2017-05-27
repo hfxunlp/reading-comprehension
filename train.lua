@@ -87,9 +87,9 @@ local function train(trainset, devset, memlimit, storevery)
 			mlpin:evaluate()
 			local serr=0
 			xlua.progress(0, ndev)
-			for _, devu in ipairs(devdata) do
+			for i, devu in ipairs(devdata) do
 				serr=serr+criterionin:forward(mlpin:forward({mkcudaLong(devu[1]), devu[2]:cudaLong()}), devu[3]:cudaLong())
-				xlua.progress(_, ndev)
+				xlua.progress(i, ndev)
 			end
 			mlpin:training()
 			return serr/ndev
