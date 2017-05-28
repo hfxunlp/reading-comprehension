@@ -1,5 +1,5 @@
 require "nn"
-buildQAM=require "models.CPFull2QAM"
+buildQAM=require "models.NICPFullQAM"
 
 function clearModule(module)
 	module:apply(function(m)
@@ -36,5 +36,4 @@ g=m:backward(input, output)
 --m=clearModule(m)
 m:clearState()
 
---torch.save("test.asc", m, "binary", false)
-torch.save("test.asc", m, "binary", true)
+--torch.save("test.asc", m, "binary", true)

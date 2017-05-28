@@ -3,6 +3,7 @@ local SequenceContainer, parent = torch.class('nn.SequenceContainer', 'nn.Contai
 function SequenceContainer:__init(module)
 	parent.__init(self)
 	self.network = module
+	self.network:training()
 	self:add(module)
 	self.nets = {}
 end
@@ -159,7 +160,9 @@ function SequenceContainer:net(t)
 end
 
 function SequenceContainer:training()
-	self:net(1):training()
+	for _, net in ipairs(self.nets) do
+		net:training()
+	end
 	parent.training(self)
 end
 

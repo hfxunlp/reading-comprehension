@@ -3,6 +3,7 @@ local TableContainer, parent = torch.class('nn.TableContainer', 'nn.Container')
 function TableContainer:__init(module, shareModule)
 	parent.__init(self)
 	self.network = module
+	self.network:training()
 	self:add(module)
 	self.nets = {}
 	self.shareModule = shareModule
@@ -220,7 +221,9 @@ function TableContainer:backward(input, gradOutput, scale)
 end
 
 function TableContainer:training()
-	self:net(1):training()
+	for _, net in ipairs(self.nets) do
+		net:training()
+	end
 	parent.training(self)
 end
 
