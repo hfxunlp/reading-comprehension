@@ -19,7 +19,7 @@ end
 local function getnnn()
 
 	local buildQAM=require "models.NICPFullQAM"
-	return buildQAM(1)
+	return buildQAM(1, nil, nil, nil, nil, 0.2)
 end
 
 function getnn()

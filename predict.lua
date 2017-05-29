@@ -1,4 +1,4 @@
-local modf = "modrs/170527_gru_l2cqf_aoacoll/dnnmod1.asc" -- model file
+local modf = "modrs/170529_1_gru_nicqf_aoacoll/devnnmod3.asc" -- model file
 local tif = "datasrc/duse/valid.data" -- test input, json format
 local rsf = "test/aoanscore.txt" -- result score file
 
@@ -56,7 +56,7 @@ require "deps.SequenceContainer"
 require "deps.Coll"
 require "deps.PScore"
 require "deps.AoA"
-require "models.CPFullTagger"
+require "models.NICPFullTagger"
 
 local tmod_full = torch.load(modf)
 local tmod = tmod_full.modules[1]

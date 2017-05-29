@@ -86,4 +86,4 @@ end
 
 --torch.save("debug.asc",conjson("duse/valid.data"))
 
-torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_192.txt", 192)), 'binary', false)
+torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_50.txt", 50)), 'binary', false)

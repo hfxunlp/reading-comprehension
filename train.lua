@@ -149,7 +149,7 @@ local function train(trainset, devset, memlimit, storevery)
 		mindeverrate=evaDev(nnmod,critmod,devset)
 		logger:log("Init model Dev:"..mindeverrate)
 
-		local eaddtrain=ntrain*ieps
+		local eaddtrain= ntrain*ieps
 
 		collectgarbage()
 

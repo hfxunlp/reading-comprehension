@@ -1,6 +1,13 @@
 require "nngraph"
 
 return function (osize, hsize, cisize, nlayer, hidsize, pdrop)
+	local function halfsize(sizein)
+		local rs = math.ceil(sizein / 2)
+		if rs % 2 == 1 then
+			rs = rs + 1
+		end
+		return rs
+	end
 	local function onehalfsize(sizein)
 		local rs = math.ceil(sizein * 1.5)
 		if rs % 2 == 1 then
@@ -23,8 +30,14 @@ return function (osize, hsize, cisize, nlayer, hidsize, pdrop)
 	local PEnc = buildEncoder(hsize, cisize * 2, nlayer, true, pdrop)
 	require "deps.PScore"
 	require "deps.AoA"
+	local clsm_isize = isize + hsize * 2 + cisize * 2 + isize
+	local clsm_hsize = hidsize or halfsize(clsm_isize)
+	local clsm_core = nn.Sequential()
+		:add(nn.Linear(clsm_isize, clsm_hsize))
+		:add(nn.Tanh())
+		:add(nn.Linear(clsm_hsize, osize, false))
 	local clsm = nn.Sequential()
-		:add(nn.PScore(nn.Linear(isize + hsize * 2 + cisize * 2 + isize, osize, false)))
+		:add(nn.PScore(clsm_core))
 		:add(nn.AoA())
 	local corem = nn.NICPFullTagger(SentEnc, PEnc, clsm, true, isize)
 	local inputp = nn.Identity()()

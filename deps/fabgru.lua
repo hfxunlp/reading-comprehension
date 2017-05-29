@@ -3,7 +3,7 @@ require "nngraph"
 require "rnn"
 require "deps.JoinBFSeq"
 
-return function (isize, osize, nlayers, fullout, hsize)
+return function (isize, osize, nlayers, fullout, pdrop, hsize)
 	osize = osize or isize
 	size = size or osize
 	nlayers = nlayers or 1
@@ -11,10 +11,10 @@ return function (isize, osize, nlayers, fullout, hsize)
 	local finput = nn.Identity()()
 	local input = nn.JoinBFSeq()({finput, dinput, finput})
 	local rinput = nn.SeqReverseSequence(1)(input)
-	local rinfo = cudnn.GRU(isize, size, nlayers)(rinput)
+	local rinfo = cudnn.GRU(isize, size, nlayers nil, pdrop)(rinput)
 	local info = nn.SeqReverseSequence(1)(rinfo)
 	local real_input = nn.JoinTable(3, 3)({input, info})
-	local _output = cudnn.GRU(isize + size, osize, nlayers)(real_input)
+	local _output = cudnn.GRU(isize + size, osize, nlayers, nil, pdrop)(real_input)
 	local output
 	if not fullout then
 		output = nn.Select(1, -1)(_output)

@@ -9,3 +9,10 @@ wvec=wvec:float()
 ntrain=#traind
 ndev=#devd
 nword=wvec:size(1)
+
+if partrain and (partrain < ntrain) then
+	for _ = partrain + 1, ntrain do
+		traind:remove()
+	end
+	ntrain = partrain
+end
