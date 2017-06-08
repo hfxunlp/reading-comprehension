@@ -114,7 +114,7 @@ function lrSheduler:feed(trainerr, deverr, nosave, silent)
 							self.lrdecayepochs = self.lrdecayepochs + 1
 							self.lr = self.startlr / self.lrdecayepochs
 						end
-						if self.lr > self.minlr then
+						if self.lr <= self.minlr then
 							self.lr = self.minlr
 							if self.logger then
 								self.logger:log("minimal lr reached")
