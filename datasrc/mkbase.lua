@@ -1,6 +1,8 @@
 local json = require("dkjson")
 local tds = require("tds")
 
+local vsize = 192
+
 function ldvec(fsrc,vsize)
 	local file=io.open(fsrc)
 	local num=file:read("*n")
@@ -24,6 +26,15 @@ function ldvec(fsrc,vsize)
 end
 
 function conjson(fname)
+	local function flatten(tc)
+		local rs={}
+		for _, t in ipairs(tc) do
+			for __, v in ipairs(t:reshape(t:size(1)):totable()) do
+				table.insert(rs, v)
+			end
+		end
+		return torch.IntTensor(rs):reshape(#rs, 1)
+	end
 	local function convt(tin)
 		local rsv=tds.Vec()
 		for _,v in ipairs(tin) do
@@ -76,6 +87,7 @@ function conjson(fname)
 		local id, qd, td=unpack(data)
 		id = convt(id)
 		td = getarg(id, fconvt(td))
+		id = flatten(id)
 		rs[curd]=tds.Vec(id, torch.IntTensor(qd):reshape(#qd, 1), td)
 		lind=file:read("*l")
 		curd=curd+1
@@ -86,4 +98,4 @@ end
 
 --torch.save("debug.asc",conjson("duse/valid.data"))
 --torch.save("debug.asc", tds.Vec(conjson("duse/valid.data"), conjson("duse/valid.data"), ldvec("duse/wvec_50.txt", 50)), 'binary', false)
-torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_384.txt", 384)), 'binary', false)
+torch.save(vsize.."bdata.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_"..vsize..".txt", vsize)), 'binary', false)

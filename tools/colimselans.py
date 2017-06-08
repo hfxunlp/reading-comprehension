@@ -35,12 +35,13 @@ def getans_mwd(pas, scl, mapd):
 	tmp = scl.strip()
 	tmp = tmp.decode("utf-8")
 	s = [float(tmpu) for tmpu in tmp.split()]
-	rsd = {}
 	src = set()
 	cache = set()
 	for sent in pas:
 		src |= set(sent)
-		tmp = segline("".join(sent).replace(" ","")).split(" ")
+		tmp = "".join(sent)
+		tmp = tmp.replace(" ","")
+		tmp = segline(tmp).split(" ")
 		for tmpu in tmp:
 			ind = tmpu.rfind("/")
 			wd, tag = tmpu[:ind], tmpu[ind+1:]
@@ -68,7 +69,7 @@ def getans_mwd(pas, scl, mapd):
 					else:
 						cnt=True
 						break
-				if wid in allwd and tmp not in rsd:
+				if wid in allwd and tmp not in rsd and tmp!="XXXXX":
 					rsd[tmp] = allwd[wid]
 		if cnt:
 			break
@@ -76,7 +77,7 @@ def getans_mwd(pas, scl, mapd):
 	mscore = rsd[rsw]
 	lim = False
 	for wd in alw:
-		if wd in rsw:
+		if wd in rsd:
 			rsw = wd
 			mscore = rsd[rsw]
 			lim = True
@@ -119,7 +120,9 @@ def handle(mapf, srcif, srctf, rsf, minkeep = 5):
 		fwrt.write(rs.encode("utf-8"))
 
 if __name__=="__main__":
+	nlpir.Init(nlpir.PACKAGE_DIR,nlpir.UTF8_CODE,None)
 	if len(sys.argv) < 6:
-		handle(sys.argv[1].decode("gbk"), sys.argv[2].decode("gbk"), sys.argv[3].decode("gbk"), sys.argv[4].decode("gbk"))
+		handle(sys.argv[1].decode("utf-8"), sys.argv[2].decode("utf-8"), sys.argv[3].decode("utf-8"), sys.argv[4].decode("utf-8"))
 	else:
-		handle(sys.argv[1].decode("gbk"), sys.argv[2].decode("gbk"), sys.argv[3].decode("gbk"), sys.argv[4].decode("gbk"), int(sys.argv[5].decode("gbk")))
+		handle(sys.argv[1].decode("utf-8"), sys.argv[2].decode("utf-8"), sys.argv[3].decode("utf-8"), sys.argv[4].decode("utf-8"), int(sys.argv[5].decode("utf-8")))
+	nlpir.Exit()

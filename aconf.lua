@@ -1,28 +1,30 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170529_1_gru_nicqf_aoacoll"
+runid="170608_aoabase"
+--runid="debug"
 logd="logs"
 
 ieps=1
 warmcycle=0
-expdecaycycle=1
+expdecaycycle=2
 gtraincycle=32
 
-modlr=1/16384--1024
+modlr=1/8192--32768/2
 
 earlystop=gtraincycle
 
 csave=3
 
-lrdecaycycle=1
+lrdecaycycle=4
 
-recyclemem=0.05
+--recyclemem=0.05
 
 storedebug=true--store model every epoch or not
 
 cntrain=nil--"modrs/"..runid.."/devnnmod3.asc"
 
-partrain=10000
+partrain=nil--1000
+partupdate=2000
 
 if cntrain then
 	warmcycle=0

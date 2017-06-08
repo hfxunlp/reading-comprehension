@@ -16,12 +16,16 @@ local logger = Logger(logd.."/"..runid..".log", nil, nil, logmod)
 logger:log("set default tensor type to float")
 torch.setdefaulttensortype('torch.FloatTensor')
 
+logger:log("load learning rate manager")
+require "utils.lrSheduler"
+local lrKeeper = lrSheduler(modlr, expdecaycycle, lrdecaycycle, earlystop, csave, csave, true, false, "modrs/"..runid.."/nnmod", "modrs/"..runid.."/devnnmod", "modrs/"..runid.."/dnnmod", ".asc", nil, logger, true, "modrs/"..runid.."/crit.asc", "modrs/"..runid.."/critdev.asc")
+
 logger:log("load data")
-require "dloader"
+local traind, devd = unpack(require "dloader")
 
-local function train(trainset, devset, memlimit, storevery)
+local function train(trainset, devset, memlimit, lrKeeper, parupdate)
 
-	local function _train(trainset, devset, memlimit)
+	local function _train(trainset, devset, memlimit, lrKeeper, parupdate)
 
 		logger:log("pre load package")
 		require "nn"
@@ -60,7 +64,9 @@ local function train(trainset, devset, memlimit, storevery)
 
 				--mlpin:maxParamNorm(2)
 
-				checkgpu(limit)
+				if limit then
+					checkgpu(limit)
+				end
 				optm(feval, _inner_params, {learningRate = lr})
 
 			end
@@ -87,33 +93,15 @@ local function train(trainset, devset, memlimit, storevery)
 			mlpin:evaluate()
 			local serr=0
 			xlua.progress(0, ndev)
-			for i, devu in ipairs(devdata) do
-				serr=serr+criterionin:forward(mlpin:forward({mkcudaLong(devu[1]), devu[2]:cudaLong()}), devu[3]:cudaLong())
+			for i, id, td in devdata:subiter() do
+				serr=serr+criterionin:forward(mlpin:forward(id), td)
 				xlua.progress(i, ndev)
 			end
 			mlpin:training()
 			return serr/ndev
 		end
 
-		local function saveObject(fname,objWrt)
-			if torch.isTypeOf(objWrt, "nn.Module") then
-				objWrt:clearState()
-				torch.save(fname, objWrt, 'binary', true)
-			else
-				torch.save(fname, objWrt, 'binary', false)
-			end
-		end
-
-		local crithis={}
-		local cridev={}
-
-		local erate=0
-		local edevrate=0
-		local storemini=1
-		local storedevmini=1
-		local storepoch=1
-		local minerrate=starterate
-		local mindeverrate=minerrate
+		local erate, edevrate
 
 		logger:log("prepare environment")
 		local savedir="modrs/"..runid.."/"
@@ -140,16 +128,27 @@ local function train(trainset, devset, memlimit, storevery)
 		wvec=nil
 
 		_inner_params, _inner_gradParams=nnmod:getParameters()
-		local savennmod=nn.Serial(nnmod):mediumSerial()
+
+		logger:log("register save model to lrScheduler")
+		lrKeeper.module=nn.Serial(nnmod):mediumSerial()
 
 		logger:log("init train")
 		local epochs=1
-		local lr=modlr
+		local lr=lrKeeper.lr
 
-		mindeverrate=evaDev(nnmod,critmod,devset)
-		logger:log("Init model Dev:"..mindeverrate)
+		edevrate=evaDev(nnmod,critmod,devset)
+		lrKeeper:feed(nil, edevrate, true)
+		logger:log("Init model Dev:"..edevrate)
 
-		local eaddtrain= ntrain*ieps
+		local eaddtrain
+		if parupdate then
+			eaddtrain=ntrain%parupdate
+			if eaddtrain==0 then
+				eaddtrain=parupdate
+			end
+		else
+			eaddtrain=ntrain*ieps
+		end
 
 		collectgarbage()
 
@@ -157,34 +156,39 @@ local function train(trainset, devset, memlimit, storevery)
 		for tmpi=1,warmcycle do
 			for tmpj=1,ieps do
 				xlua.progress(0, ntrain)
-				for i,trainu in ipairs(trainset) do
-					gradUpdate(nnmod,{mkcudaLong(trainu[1]), trainu[2]:cudaLong()}, trainu[3]:cudaLong(),critmod,lr,optmethod,memlimit)
+				for i, id, td in trainset:subiter() do
+					gradUpdate(nnmod, id, td, critmod, lr, optmethod, memlimit)
 					xlua.progress(i, ntrain)
+					if parupdate and (i%parupdate==0) then
+						erate=sumErr/parupdate
+						lr=lrKeeper:feed(erate, nil, true)
+						sumErr=0
+					end
+				end
+				if parupdate then
+					erate=sumErr/eaddtrain
+					lr=lrKeeper:feed(erate, nil, true)
+					sumErr=0
 				end
 			end
-			local erate=sumErr/eaddtrain
-			if erate<minerrate then
-				minerrate=erate
+			if not parupdate then
+				erate=sumErr/eaddtrain
+				lrKeeper:feed(erate, nil, true)
+				logger:log("epoch:"..tostring(epochs)..",lr:"..lr..",Tra:"..erate)
+				sumErr=0
 			end
-			table.insert(crithis,erate)
-			logger:log("epoch:"..tostring(epochs)..",lr:"..lr..",Tra:"..erate)
-			sumErr=0
 			epochs=epochs+1
 		end
 
 		if warmcycle>0 then
 			logger:log("save neural network trained")
-			saveObject(savedir.."nnmod.asc",savennmod)
+			lrKeeper:saveModel(savedir.."nnmod.asc")
 		end
 
 		epochs=1
 		local icycle=1
 
-		local aminerr=1
-		local amindeverr=1
-		local lrdecayepochs=1
-
-		local cntrun=true
+		local cntrun=1
 
 		collectgarbage()
 
@@ -193,95 +197,39 @@ local function train(trainset, devset, memlimit, storevery)
 			for innercycle=1,gtraincycle do
 				for tmpi=1,ieps do
 					xlua.progress(0, ntrain)
-					for i,trainu in ipairs(trainset) do
-						gradUpdate(nnmod,{mkcudaLong(trainu[1]), trainu[2]:cudaLong()}, trainu[3]:cudaLong(),critmod,lr,optmethod,memlimit)
+					for i, id, td in trainset:subiter() do
+						gradUpdate(nnmod, id, td, critmod, lr, optmethod, memlimit)
 						xlua.progress(i, ntrain)
+						if parupdate and (i%parupdate==0) then
+							erate=sumErr/parupdate
+							lr=lrKeeper:feed(erate, nil, nil, true)
+							sumErr=0
+						end
+					end
+					if parupdate and (tmpi<ieps) then
+						erate=sumErr/eaddtrain
+						lr=lrKeeper:feed(erate, nil, nil, true)
+						sumErr=0
 					end
 				end
-				local erate=sumErr/eaddtrain
-				table.insert(crithis,erate)
-				local edevrate=evaDev(nnmod,critmod,devset)
-				table.insert(cridev,edevrate)
+				erate=sumErr/eaddtrain
+				edevrate=evaDev(nnmod,critmod,devset)
 				logger:log("epoch:"..tostring(epochs)..",lr:"..lr..",Tra:"..erate..",Dev:"..edevrate)
-				--logger:log("epoch:"..tostring(epochs)..",lr:"..lr..",Tra:"..erate)
-				local modsavd=false
-				if edevrate<mindeverrate then
-					mindeverrate=edevrate
-					amindeverr=1
-					aminerr=1--reset aminerr at the same time
-					saveObject(savedir.."devnnmod"..storedevmini..".asc",savennmod)
-					storedevmini=storedevmini+1
-					if storedevmini>csave then
-						storedevmini=1
-					end
-					modsavd=true
-					logger:log("new minimal dev error found, model saved")
-				else
-					if earlystop and amindeverr>earlystop then
-						logger:log("early stop")
-						cntrun=false
-						break
-					end
-					amindeverr=amindeverr+1
-				end
-				if erate<minerrate then
-					minerrate=erate
-					aminerr=1
-					if not modsavd then
-						saveObject(savedir.."nnmod"..storemini..".asc",savennmod)
-						storemini=storemini+1
-						if storemini>csave then
-							storemini=1
-						end
-						logger:log("new minimal error found, model saved")
-					end
-				else
-					if aminerr>=expdecaycycle then
-						aminerr=0
-						if lrdecayepochs>lrdecaycycle then
-							modlr=lr
-							lrdecayepochs=1
-						end
-						lrdecayepochs=lrdecayepochs+1
-						lr=modlr/(lrdecayepochs)
-					end
-					if storevery then
-						saveObject(savedir.."dnnmod"..storepoch..".asc",savennmod)
-						storepoch=storepoch+1
-						if storepoch>csave then
-							storepoch=1
-						end
-					end
-					aminerr=aminerr+1
+				lr, cntrun = lrKeeper:feed(erate, edevrate)
+				if not cntrun then
+					break
 				end
 				sumErr=0
 				epochs=epochs+1
 			end
 
 			logger:log("save neural network trained")
-			saveObject(savedir.."nnmod.asc",savennmod)
+			lrKeeper:saveModel(savedir.."nnmod.asc")
 
 			logger:log("save criterion history trained")
-			local critensor=torch.Tensor(crithis)
-			saveObject(savedir.."crit.asc",critensor)
-			local critdev=torch.Tensor(cridev)
-			saveObject(savedir.."critdev.asc",critdev)
+			lrKeeper:saveCrit()
 
-			--[[logger:log("plot and save criterion")
-			gnuplot.plot(critensor)
-			gnuplot.figprint(savedir.."crit.png")
-			gnuplot.figprint(savedir.."crit.eps")
-			gnuplot.plotflush()
-			gnuplot.plot(critdev)
-			gnuplot.figprint(savedir.."critdev.png")
-			gnuplot.figprint(savedir.."critdev.eps")
-			gnuplot.plotflush()]]
-
-			critensor=nil
-			critdev=nil
-
-			logger:log("task finished!Minimal error rate:"..minerrate.."	"..mindeverrate)
-			--logger:log("task finished!Minimal error rate:"..minerrate)
+			logger:log("task finished!Minimal error rate:"..lrKeeper.minerrate.."	"..lrKeeper.mindeverrate)
 
 			logger:log("wait for test, neural network saved at nnmod*.asc")
 
@@ -294,7 +242,7 @@ local function train(trainset, devset, memlimit, storevery)
 	end
 
 	local _, err = pcall(function ()
-		_train(trainset, devset, memlimit)
+		_train(trainset, devset, memlimit, lrKeeper, parupdate)
 		end
 	)
 	if err then
@@ -302,6 +250,6 @@ local function train(trainset, devset, memlimit, storevery)
 	end
 end
 
-train(traind, devd, recyclemem or 0.05, storedebug)
+train(traind, devd, recyclemem, lrKeeper, partupdate)
 
 logger:shutDown()

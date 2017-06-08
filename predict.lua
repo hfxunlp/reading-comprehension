@@ -1,4 +1,4 @@
-local modf = "modrs/170529_1_gru_nicqf_aoacoll/devnnmod3.asc" -- model file
+local modf = "modrs/170604_gru_nicqf_aoacoll/devnnmod1.asc" -- model file
 local tif = "datasrc/duse/valid.data" -- test input, json format
 local rsf = "test/aoanscore.txt" -- result score file
 
