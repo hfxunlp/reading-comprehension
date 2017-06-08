@@ -104,27 +104,12 @@ function lrSheduler:feed(trainerr, deverr, nosave, silent)
 			end
 			if self.aminerr >= self.expdecaycycle then
 				self.aminerr = 1
-<<<<<<< HEAD
 				if self.minlr then
 					if self.lr > self.minlr then
 						if self.lrdecayepochs > self.lrdecaycycle then
 							self.startlr = self.lr
 							self.lr = self.startlr / 2
 							self.lrdecayepochs = 2
-=======
-				if self.lrdecayepochs > self.lrdecaycycle then
-					self.startlr = self.lr
-					self.lrdecayepochs = 1
-				end
-				self.lrdecayepochs = self.lrdecayepochs + 1
-				self.lr = self.startlr / self.lrdecayepochs
-			else
-				if self.nsave_debug then
-					if self.nsave_debug > 1 then
-						store_file = self.savedhead..tostring(self.stored)..self.savetail
-						if self.stored >= self.nsave_debug then
-							self.stored = 1
->>>>>>> origin/master
 						else
 							self.lrdecayepochs = self.lrdecayepochs + 1
 							self.lr = self.startlr / self.lrdecayepochs
