@@ -1,15 +1,19 @@
 local lrSheduler = torch.class("lrSheduler")
 
-function lrSheduler:__init(startlr, expdecaycycle, lrdecaycycle, earlystop, nsave_train, nsave_dev, autosave, save_debug, savethead, savevhead, savedhead, savetail, savemodel, logger, record_err, terrf, derrf, mindeverrate, minerrate)
+function lrSheduler:__init(startlr, minlr, expdecaycycle, lrdecaycycle, earlystop, nsave_train, nsave_dev, autosave, save_debug, savethead, savevhead, savedhead, savetail, savemodel, logger, record_err, terrf, derrf, mindeverrate, minerrate)
 		self.startlr = startlr
 		self.lr = startlr
+		self.minlr = (minlr==nil) and startlr/8192 or minlr
+		if self.minlr > self.startlr then
+			self.minlr = self.startlr
+		end
 		self.expdecaycycle = expdecaycycle or 1
 		self.lrdecaycycle = lrdecaycycle or 1
 		self.lrdecayepochs = 1
 		self.earlystop = earlystop
 		self.nsave_train = nsave_train or 1
 		self.nsave_dev = nsave_dev or 1
-		self.nsave_debug = (save_debug==nil) and 1 or false
+		self.nsave_debug = (save_debug==nil) and 1 or save_debug
 		self.storet = 1
 		self.storev = 1
 		self.stored = 1
@@ -85,28 +89,49 @@ function lrSheduler:feed(trainerr, deverr, nosave, silent)
 				savefor = "train"
 			end
 		else
+			if self.nsave_debug then
+				if self.nsave_debug > 1 then
+					store_file = self.savedhead..tostring(self.stored)..self.savetail
+					if self.stored >= self.nsave_debug then
+						self.stored = 1
+					else
+						self.stored = self.stored + 1
+					end
+				else
+					store_file = self.savedhead..self.savetail
+				end
+				savefor = "debug"
+			end
 			if self.aminerr >= self.expdecaycycle then
 				self.aminerr = 1
-				if self.lrdecayepochs > self.lrdecaycycle then
-					self.startlr = lr
-					self.lrdecayepochs = 1
-				end
-				self.lrdecayepochs = self.lrdecayepochs + 1
-				self.lr = self.startlr / self.lrdecayepochs
-			else
-				if self.nsave_debug then
-					if self.nsave_debug > 1 then
-						store_file = self.savedhead..tostring(self.stored)..self.savetail
-						if self.stored >= self.nsave_debug then
-							self.stored = 1
+				if self.minlr then
+					if self.lr > self.minlr then
+						if self.lrdecayepochs > self.lrdecaycycle then
+							self.startlr = self.lr
+							self.lr = self.startlr / 2
+							self.lrdecayepochs = 2
 						else
-							self.stored = self.stored + 1
+							self.lrdecayepochs = self.lrdecayepochs + 1
+							self.lr = self.startlr / self.lrdecayepochs
 						end
-					else
-						store_file = self.savedhead..self.savetail
+						if self.lr > self.minlr then
+							self.lr = self.minlr
+							if self.logger then
+								self.logger:log("minimal lr reached")
+							end
+						end
 					end
-					savefor = "debug"
+				else
+					if self.lrdecayepochs > self.lrdecaycycle then
+						self.startlr = self.lr
+						self.lr = self.startlr / 2
+						self.lrdecayepochs = 2
+					else
+						self.lrdecayepochs = self.lrdecayepochs + 1
+						self.lr = self.startlr / self.lrdecayepochs
+					end
 				end
+			else
 				self.aminerr = self.aminerr + 1
 			end
 		end

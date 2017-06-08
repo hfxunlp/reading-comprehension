@@ -18,7 +18,7 @@ torch.setdefaulttensortype('torch.FloatTensor')
 
 logger:log("load learning rate manager")
 require "utils.lrSheduler"
-local lrKeeper = lrSheduler(modlr, expdecaycycle, lrdecaycycle, earlystop, csave, csave, true, false, "modrs/"..runid.."/nnmod", "modrs/"..runid.."/devnnmod", "modrs/"..runid.."/dnnmod", ".asc", nil, logger, true, "modrs/"..runid.."/crit.asc", "modrs/"..runid.."/critdev.asc")
+local lrKeeper = lrSheduler(modlr, nil, expdecaycycle, lrdecaycycle, earlystop, csave, csave, true, false, "modrs/"..runid.."/nnmod", "modrs/"..runid.."/devnnmod", "modrs/"..runid.."/dnnmod", ".asc", nil, logger, true, "modrs/"..runid.."/crit.asc", "modrs/"..runid.."/critdev.asc")
 
 logger:log("load data")
 local traind, devd = unpack(require "dloader")
@@ -57,17 +57,19 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate)
 
 				local pred=mlpin:forward(x)
 				_inner_err=criterionin:forward(pred, y)
-				local gradCriterion=criterionin:backward(pred, y)
-				sumErr=sumErr+_inner_err
-				pred=nil
-				mlpin:backward(x, gradCriterion)
+				if _inner_err~=0 then
+					local gradCriterion=criterionin:backward(pred, y)
+					sumErr=sumErr+_inner_err
+					pred=nil
+					mlpin:backward(x, gradCriterion)
 
-				--mlpin:maxParamNorm(2)
+					--mlpin:maxParamNorm(2)
 
-				if limit then
-					checkgpu(limit)
+					if limit then
+						checkgpu(limit)
+					end
+					optm(feval, _inner_params, {learningRate = lr})
 				end
-				optm(feval, _inner_params, {learningRate = lr})
 
 			end
 
