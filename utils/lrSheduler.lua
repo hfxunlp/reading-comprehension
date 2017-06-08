@@ -88,7 +88,7 @@ function lrSheduler:feed(trainerr, deverr, nosave, silent)
 			if self.aminerr >= self.expdecaycycle then
 				self.aminerr = 1
 				if self.lrdecayepochs > self.lrdecaycycle then
-					self.startlr = lr
+					self.startlr = self.lr
 					self.lrdecayepochs = 1
 				end
 				self.lrdecayepochs = self.lrdecayepochs + 1
