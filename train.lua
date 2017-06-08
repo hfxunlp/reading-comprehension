@@ -23,9 +23,9 @@ local lrKeeper = lrSheduler(modlr, nil, expdecaycycle, lrdecaycycle, earlystop, 
 logger:log("load data")
 local traind, devd = unpack(require "dloader")
 
-local function train(trainset, devset, memlimit, lrKeeper, parupdate)
+local function train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
 
-	local function _train(trainset, devset, memlimit, lrKeeper, parupdate)
+	local function _train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
 
 		logger:log("pre load package")
 		require "nn"
@@ -204,13 +204,13 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate)
 						xlua.progress(i, ntrain)
 						if parupdate and (i%parupdate==0) then
 							erate=sumErr/parupdate
-							lr=lrKeeper:feed(erate, nil, nil, true)
+							lr=lrKeeper:feed(erate, nil, nil, psilent)
 							sumErr=0
 						end
 					end
 					if parupdate and (tmpi<ieps) then
 						erate=sumErr/eaddtrain
-						lr=lrKeeper:feed(erate, nil, nil, true)
+						lr=lrKeeper:feed(erate, nil, nil, psilent)
 						sumErr=0
 					end
 				end
@@ -244,7 +244,7 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate)
 	end
 
 	local _, err = pcall(function ()
-		_train(trainset, devset, memlimit, lrKeeper, parupdate)
+		_train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
 		end
 	)
 	if err then
@@ -252,6 +252,6 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate)
 	end
 end
 
-train(traind, devd, recyclemem, lrKeeper, partupdate)
+train(traind, devd, recyclemem, lrKeeper, partupdate, (partsilent==nil) and true or partsilent)
 
 logger:shutDown()

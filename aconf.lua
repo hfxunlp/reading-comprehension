@@ -25,6 +25,7 @@ cntrain=nil--"modrs/"..runid.."/devnnmod3.asc"
 
 partrain=nil--1000
 partupdate=5000
+partsilent=false
 
 if cntrain then
 	warmcycle=0
