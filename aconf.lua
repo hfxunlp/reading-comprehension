@@ -6,7 +6,7 @@ logd="logs"
 
 ieps=1
 warmcycle=0
-expdecaycycle=2
+expdecaycycle=4
 gtraincycle=32
 
 modlr=1/8192--32768/2
