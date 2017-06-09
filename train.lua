@@ -219,12 +219,12 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 							if pareva then
 								edevrate=evaDev(nnmod,critmod,devset)
 								if not psilent then
-									logger:log("Tra:"..erate..",Dev:"..edevrate)
+									logger:log("lr:"..lr..",Tra:"..erate..",Dev:"..edevrate)
 								end
 								lr=lrKeeper:feed(erate, edevrate, nil, psilent)
 							else
 								if not psilent then
-									logger:log("Tra:"..erate)
+									logger:log("lr:"..lr..",Tra:"..erate)
 								end
 								lr=lrKeeper:feed(erate, nil, nil, psilent)
 							end
@@ -236,12 +236,12 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 						if pareva then
 							edevrate=evaDev(nnmod,critmod,devset)
 							if not psilent then
-								logger:log("Tra:"..erate..",Dev:"..edevrate)
+								logger:log("lr:"..lr..",Tra:"..erate..",Dev:"..edevrate)
 							end
 							lr=lrKeeper:feed(erate, edevrate, nil, psilent)
 						else
 							if not psilent then
-								logger:log("Tra:"..erate)
+								logger:log("lr:"..lr..",Tra:"..erate)
 							end
 							lr=lrKeeper:feed(erate, nil, nil, psilent)
 						end
