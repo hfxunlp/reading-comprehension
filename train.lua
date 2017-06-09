@@ -23,9 +23,9 @@ local lrKeeper = lrSheduler(modlr, nil, expdecaycycle, lrdecaycycle, earlystop, 
 logger:log("load data")
 local traind, devd = unpack(require "dloader")
 
-local function train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
+local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent)
 
-	local function _train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
+	local function _train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent)
 
 		logger:log("pre load package")
 		require "nn"
@@ -216,19 +216,35 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
 						xlua.progress(i, ntrain)
 						if parupdate and (i%parupdate==0) and (i~=ntrain) then
 							erate=sumErr/parupdate
-							if not psilent then
-								logger:log(erate)
+							if pareva then
+								edevrate=evaDev(nnmod,critmod,devset)
+								if not psilent then
+									logger:log("Tra:"..erate..",Dev:"..edevrate)
+								end
+								lr=lrKeeper:feed(erate, edevrate, nil, psilent)
+							else
+								if not psilent then
+									logger:log("Tra:"..erate)
+								end
+								lr=lrKeeper:feed(erate, nil, nil, psilent)
 							end
-							lr=lrKeeper:feed(erate, nil, nil, psilent)
 							sumErr=0
 						end
 					end
 					if parupdate and (tmpi<ieps) then
 						erate=sumErr/eaddtrain
-						if not psilent then
-							logger:log(erate)
+						if pareva then
+							edevrate=evaDev(nnmod,critmod,devset)
+							if not psilent then
+								logger:log("Tra:"..erate..",Dev:"..edevrate)
+							end
+							lr=lrKeeper:feed(erate, edevrate, nil, psilent)
+						else
+							if not psilent then
+								logger:log("Tra:"..erate)
+							end
+							lr=lrKeeper:feed(erate, nil, nil, psilent)
 						end
-						lr=lrKeeper:feed(erate, nil, nil, psilent)
 						sumErr=0
 					end
 				end
@@ -262,7 +278,7 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
 	end
 
 	local _, err = pcall(function ()
-		_train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
+		_train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent)
 		end
 	)
 	if err then
@@ -270,6 +286,6 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, psilent)
 	end
 end
 
-train(traind, devd, recyclemem, lrKeeper, partupdate, (partsilent==nil) and true or partsilent)
+train(traind, devd, recyclemem, lrKeeper, partupdate, (parteva==nil) and true or parteva, (partsilent==nil) and true or partsilent)
 
 logger:shutDown()
