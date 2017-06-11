@@ -61,7 +61,7 @@ function lrSheduler:feed(trainerr, deverr, nosave, silent)
 		else
 			if self.earlystop and self.amindeverr > self.earlystop then
 				runsig = false
-				if self.logger then
+				if self.logger and (not silent) then
 					self.logger:log("send earlystop signal")
 				end
 			end

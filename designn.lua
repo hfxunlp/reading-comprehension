@@ -8,7 +8,7 @@ local function getonn()
 	require "nn"
 	require "nn.Decorator"
 	require "dpnn"
-	local buildQAM=require "models.AoAQAM"
+	local buildQAM=require "models.ne_AoAQAM"
 	local _rm=buildQAM(1)
 	_rm=nil
 	wvec = nil
@@ -18,7 +18,7 @@ end
 
 local function getnnn()
 
-	local buildQAM=require "models.AoAQAM"
+	local buildQAM=require "models.ne_AoAQAM"
 	--return buildQAM(1, nil, nil, nil, nil, 0.2)
 	return buildQAM(1)
 end

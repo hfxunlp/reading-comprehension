@@ -1,6 +1,6 @@
 local tds = require "tds"
 
-local _fulldata = torch.load("datasrc/192bdata.asc", 'binary', false)
+local _fulldata = torch.load("datasrc/50bdata.asc", 'binary', false)
 
 local traindata, devdata
 

@@ -10,13 +10,13 @@ return function (osize, hsize, nlayer)
 	end
 	require "deps.vecLookup"
 	local qvm = nn.vecLookup(wvec)
-	local pvm = qvm:clone('weight', 'gradWeight', 'bias', 'gradBias')
+	local pvm = nn.vecLookup(wvec)
 	local isize = wvec:size(2)
 	hsize = hsize or isize--mksize(isize, 0.5)
 	nlayer = nlayer or 1
 	local buildEncoder = cudnn.BGRU
 	local PEnc = buildEncoder(isize, hsize/2, nlayer)
-	local QEnc = PEnc:clone('weight', 'gradWeight', 'bias', 'gradBias')
+	local QEnc = buildEncoder(isize, hsize/2, nlayer)
 	local inputp = nn.Identity()()
 	local vp = pvm(inputp)
 	local vq = qvm()

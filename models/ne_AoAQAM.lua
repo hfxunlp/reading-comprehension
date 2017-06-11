@@ -16,7 +16,7 @@ return function (osize, hsize, nlayer)
 	nlayer = nlayer or 1
 	local buildEncoder = cudnn.BGRU
 	local PEnc = buildEncoder(isize, hsize/2, nlayer)
-	local QEnc = PEnc:clone('weight', 'gradWeight', 'bias', 'gradBias')
+	local QEnc = buildEncoder(isize, hsize/2, nlayer)
 	local inputp = nn.Identity()()
 	local vp = pvm(inputp)
 	local vq = qvm()

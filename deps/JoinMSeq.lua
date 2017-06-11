@@ -1,10 +1,10 @@
-local JoinBFSeq, parent = torch.class('nn.JoinBFSeq', 'nn.Module')
+local JoinMSeq, parent = torch.class('nn.JoinMSeq', 'nn.Module')
 
-function JoinBFSeq:__init()
+function JoinMSeq:__init()
 	parent.__init(self)
 end
 
-function JoinBFSeq:updateOutput(input)
+function JoinMSeq:updateOutput(input)
 	local f, i, fe = unpack(input)
 	local isize = input:size()
 	local seql = isize[1]
@@ -18,11 +18,11 @@ function JoinBFSeq:updateOutput(input)
 	return self.output
 end
 
-function JoinBFSeq:updateGradInput(input, gradOutput)
+function JoinMSeq:updateGradInput(input, gradOutput)
 	self.gradInput = {gradOutput[1], gradOutput:narrow(1, 2, gradOutput:size(1) - 2), gradOutput[-1]}
 	return self.gradInput
 end
 
-function JoinBFSeq:clearState()
+function JoinMSeq:clearState()
 	return parent.clearState(self)
 end
