@@ -1,4 +1,4 @@
-local modf = "modrs/170604_gru_nicqf_aoacoll/devnnmod1.asc" -- model file
+local modf = "modrs/170611_faoabase_09sgd_00005_v50_h50/devnnmod3.asc" -- model file
 local tif = "datasrc/duse/valid.data" -- test input, json format
 local rsf = "test/aoanscore.txt" -- result score file
 
@@ -50,13 +50,17 @@ require "nngraph"
 
 require "deps.vecLookup"
 require "deps.JoinFSeq"
+require "deps.JoinBFSeq"
 require "deps.SelData"
+require "deps.BSelData"
 require "deps.TableContainer"
 require "deps.SequenceContainer"
 require "deps.Coll"
 require "deps.PScore"
 require "deps.AoA"
 require "models.NICPFullTagger"
+require "deps.CScore"
+require "deps.fColl"
 
 local tmod_full = torch.load(modf)
 local tmod = tmod_full.modules[1]
@@ -65,8 +69,19 @@ local tdata = ldjson(tif)
 
 local file = io.open(rsf, "w")
 
+local function flatten(tc)
+	local rs={}
+	for _, t in ipairs(tc) do
+		for __, v in ipairs(t:reshape(t:size(1)):totable()) do
+			table.insert(rs, v)
+		end
+	end
+	return torch.IntTensor(rs):reshape(#rs, 1)
+end
+
 for _, dtest in ipairs(tdata) do
-	local rs = tmod:updateOutput({mkcudaLong(dtest[1]), dtest[2]:cudaLong()}):float()
+	--local rs = tmod:updateOutput({mkcudaLong(dtest[1]), dtest[2]:cudaLong()}):float()
+	local rs = tmod:updateOutput({flatten(dtest[1]):cudaLong(), dtest[2]:cudaLong()}):float()
 	local rs = rs:reshape(rs:size(1)):totable()
 	local wrs = {}
 	for __, v in ipairs(rs) do

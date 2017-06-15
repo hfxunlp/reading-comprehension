@@ -1,7 +1,7 @@
 local json = require("dkjson")
 local tds = require("tds")
 
-local vsize = 192
+local vsize = 384
 
 function ldvec(fsrc,vsize)
 	local file=io.open(fsrc)

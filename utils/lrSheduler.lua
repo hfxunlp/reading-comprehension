@@ -106,7 +106,7 @@ function lrSheduler:feed(trainerr, deverr, nosave, silent)
 				self.aminerr = 1
 				if self.minlr then
 					if self.lr > self.minlr then
-						if self.lrdecayepochs > self.lrdecaycycle then
+						if self.lrdecayepochs >= self.lrdecaycycle then
 							self.startlr = self.lr
 							self.lr = self.startlr / 2
 							self.lrdecayepochs = 2
@@ -122,7 +122,7 @@ function lrSheduler:feed(trainerr, deverr, nosave, silent)
 						end
 					end
 				else
-					if self.lrdecayepochs > self.lrdecaycycle then
+					if self.lrdecayepochs >= self.lrdecaycycle then
 						self.startlr = self.lr
 						self.lr = self.startlr / 2
 						self.lrdecayepochs = 2

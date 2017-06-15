@@ -1,6 +1,8 @@
 local json = require("dkjson")
 local tds = require("tds")
 
+local vsize=50
+
 function ldvec(fsrc,vsize)
 	local file=io.open(fsrc)
 	local num=file:read("*n")
@@ -86,4 +88,4 @@ end
 
 --torch.save("debug.asc",conjson("duse/valid.data"))
 --torch.save("debug.asc", tds.Vec(conjson("duse/valid.data"), conjson("duse/valid.data"), ldvec("duse/wvec_50.txt", 50)), 'binary', false)
-torch.save("data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_384.txt", 384)), 'binary', false)
+torch.save(vsize.."data.asc", tds.Vec(conjson("duse/train.data"), conjson("duse/valid.data"), ldvec("duse/wvec_"..vsize..".txt", vsize)), 'binary', false)
