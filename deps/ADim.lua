@@ -8,7 +8,7 @@ end
 function ADim:updateOutput(input)
 	local idim = input:size():totable()
 	local adim = self.dim - #idim
-	if adim > 0 then
+	if adim > 1 then
 		for _ = 1, adim do
 			table.insert(idim, 1)
 		end
