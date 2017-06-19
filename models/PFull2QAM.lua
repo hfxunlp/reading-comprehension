@@ -1,4 +1,11 @@
 require "nngraph"
+require "deps.vecLookup"
+require "deps.TableContainer"
+require "deps.SequenceContainer"
+require "models.PFullTagger"
+require "deps.PScore"
+require "deps.AoA"
+require "deps.Coll"
 
 return function (osize, hsize, cisize, nlayer, hidsize)
 	local function halfsize(sizein)
@@ -15,16 +22,12 @@ return function (osize, hsize, cisize, nlayer, hidsize)
 		end
 		return rs
 	end
-	require "deps.vecLookup"
-	require "deps.TableContainer"
 	local qvm = nn.vecLookup(wvec)
 	local pvm = nn.TableContainer(qvm:clone('weight', 'gradWeight', 'bias', 'gradBias'), true)
 	local isize = wvec:size(2)
 	hsize = hsize or isize
 	cisize = cisize or onehalfsize(hsize)
 	nlayer = nlayer or 1
-	require "deps.SequenceContainer"
-	require "models.PFullTagger"
 	local buildEncoder = require "deps.fgru"
 	local SentEnc = buildEncoder(isize, hsize, nlayer, true)
 	local PEnc = buildEncoder(hsize, cisize, nlayer, true)
@@ -34,8 +37,6 @@ return function (osize, hsize, cisize, nlayer, hidsize)
 		:add(nn.Linear(clsm_isize, clsm_hsize))
 		:add(nn.Tanh())
 		:add(nn.Linear(clsm_hsize, osize, false))
-	require "deps.PScore"
-	require "deps.AoA"
 	local clsm = nn.Sequential()
 		:add(nn.PScore(clsm_core))
 		:add(nn.AoA())
@@ -48,7 +49,6 @@ return function (osize, hsize, cisize, nlayer, hidsize)
 	local QEnc = buildEncoder(isize, isize, nlayer, true)
 	local qfeat = QEnc(vq)
 	local _output = corem({vp, qfeat})
-	require "deps.Coll"
 	local output = nn.Coll()({inputp, _output})
 	output = nn.Log()(output)
 	return nn.gModule({inputp, inputq}, {output})

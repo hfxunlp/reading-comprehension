@@ -2,6 +2,9 @@ require "nngraph"
 require "deps.CScore"
 require "deps.AoA"
 require "deps.fColl"
+require "deps.SequenceContainer"
+require "deps.ADim"
+require "deps.GA"
 
 return function (osize, hsize, nlayer)
 	local function mksize(sizein, vl)
@@ -18,14 +21,21 @@ return function (osize, hsize, nlayer)
 	hsize = hsize or isize--mksize(isize, 0.5)
 	nlayer = nlayer or 1
 	local buildEncoder = cudnn.BGRU
-	local PEnc = buildEncoder(isize, hsize/2, nlayer)
-	local QEnc = buildEncoder(isize, hsize/2, nlayer)
+	local PEnc1 = buildEncoder(isize, hsize/2, nlayer)
+	local PEnc2 = buildEncoder(hsize, hsize/2, nlayer)
+	local buildGA = require "deps.buildAttnUnit"
+	local GA = nn.GA(buildGA())
+	local QEnc1 = buildEncoder(isize, hsize/2, nlayer)
+	local QEnc2 = buildEncoder(isize, hsize/2, nlayer)
 	local inputp = nn.Identity()()
 	local vp = pvm(inputp)
 	local vq = qvm()
-	local p=PEnc(vp)
-	local q=QEnc(vq)
-	local output = nn.CScore()({p, q})
+	local p1=PEnc1(vp)
+	local q1=QEnc1(vq)
+	local _p2i=GA({p1, q1})
+	local p2=PEnc2(_p2i)
+	local q2=QEnc2(vq)
+	local output = nn.CScore()({p2, q2})
 	output = nn.AoA()(output)
 	output = nn.fColl()({inputp, output})
 	output = nn.Log()(output)

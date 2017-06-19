@@ -1,4 +1,9 @@
 require "nngraph"
+require "deps.vecLookup"
+require "deps.TableContainer"
+require "deps.SequenceContainer"
+require "models.FullTagger"
+require "deps.MaxColl"
 
 return function (osize, hsize, cisize, nlayer)
 	local function onehalfsize(sizein)
@@ -8,16 +13,12 @@ return function (osize, hsize, cisize, nlayer)
 		end
 		return rs
 	end
-	require "deps.vecLookup"
-	require "deps.TableContainer"
 	local qvm = nn.vecLookup(wvec)
 	local pvm = nn.TableContainer(qvm:clone('weight', 'gradWeight', 'bias', 'gradBias'), true)
 	local isize = wvec:size(2)
 	hsize = hsize or isize
 	cisize = cisize or onehalfsize(hsize)
 	nlayer = nlayer or 1
-	require "deps.SequenceContainer"
-	require "models.FullTagger"
 	local buildEncoder = require "deps.fgru"
 	local SentEnc = buildEncoder(isize, hsize, nlayer, true)
 	local PEnc = buildEncoder(hsize, cisize, nlayer, true)
@@ -31,7 +32,6 @@ return function (osize, hsize, cisize, nlayer)
 	local QEnc = buildEncoder(isize, isize, nlayer)
 	local qfeat = QEnc(vq)
 	local _output = corem({vp, qfeat})
-	require "deps.MaxColl"
 	local output = nn.MaxColl()({inputp, _output})
 	return nn.gModule({inputp, inputq}, {output})
 	--return nn.gModule({vp, vq}, {output})

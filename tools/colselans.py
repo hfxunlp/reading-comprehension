@@ -45,7 +45,7 @@ def getans_mwd(pas, scl, mapd):
 						else:
 							cnt=True
 							break
-					if wid in allwd and tmp not in rsd:
+					if wid in allwd and tmp not in rsd and tmp!="XXXXX":
 						rsd[tmp]=allwd[wid]
 			if cnt:
 				break

@@ -1,6 +1,6 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170614_ne_2aoabase_088sgd_0001_v50_h50"
+runid="170619_ne_2gaoabase_088sgd_0001_v50_h50"
 --runid="debug"
 logd="logs"
 

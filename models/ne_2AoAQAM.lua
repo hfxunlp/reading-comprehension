@@ -1,4 +1,7 @@
 require "nngraph"
+require "deps.CScore"
+require "deps.AoA"
+require "deps.fColl"
 
 return function (osize, hsize, nlayer)
 	local function mksize(sizein, vl)
@@ -23,9 +26,6 @@ return function (osize, hsize, nlayer)
 	local vq = qvm()
 	local p=PEnc2(PEnc1(vp))
 	local q=QEnc(vq)
-	require "deps.CScore"
-	require "deps.AoA"
-	require "deps.fColl"
 	local output = nn.CScore()({p, q})
 	output = nn.AoA()(output)
 	output = nn.fColl()({inputp, output})

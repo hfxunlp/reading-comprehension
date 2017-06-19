@@ -1,4 +1,8 @@
 require "nngraph"
+require "deps.vecLookup"
+require "deps.CScore"
+require "deps.AoA"
+require "deps.fColl"
 
 return function (osize, hsize, nlayer)
 	local function mksize(sizein, vl)
@@ -8,7 +12,6 @@ return function (osize, hsize, nlayer)
 		end
 		return rs
 	end
-	require "deps.vecLookup"
 	local qvm = nn.vecLookup(wvec)
 	local pvm = nn.vecLookup(wvec:clone())
 	local isize = wvec:size(2)
@@ -22,9 +25,6 @@ return function (osize, hsize, nlayer)
 	local vq = qvm()
 	local p=PEnc(vp)
 	local q=QEnc(vq)
-	require "deps.CScore"
-	require "deps.AoA"
-	require "deps.fColl"
 	local output = nn.CScore()({p, q})
 	output = nn.AoA()(output)
 	output = nn.fColl()({inputp, output})

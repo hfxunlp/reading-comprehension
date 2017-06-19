@@ -51,7 +51,7 @@ def getans_mwd(pas, scl):
 	mscore = rsd[rsw]
 	lim = False
 	for wd in alw:
-		if wd in rsw:
+		if wd in rsd:
 			rsw = wd
 			mscore = rsd[rsw]
 			lim = True
@@ -96,7 +96,7 @@ def getans_cwd(pas, scl):
 	mscore = rsd[rsw]
 	lim = False
 	for wd in alw:
-		if wd in rsw:
+		if wd in rsd:
 			rsw = wd
 			mscore = rsd[rsw]
 			lim = True
@@ -138,4 +138,6 @@ def handle(srcif, srctf, rsf):
 		fwrt.write(rs.encode("utf-8"))
 
 if __name__=="__main__":
+	nlpir.Init(nlpir.PACKAGE_DIR,nlpir.UTF8_CODE,None)
 	handle(sys.argv[1].decode("gbk"), sys.argv[2].decode("gbk"), sys.argv[3].decode("gbk"))
+	nlpir.Exit()
