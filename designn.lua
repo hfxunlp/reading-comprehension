@@ -35,3 +35,19 @@ function getcrit()
 	return nn.ClassNLLCriterion();
 	--return nn.MultiMarginCriterion();
 end
+
+local function setvec(net, value)
+	net:apply(function(m)
+		if torch.isTypeOf(m, 'nn.vecLookup')) then
+			m.updatevec = value
+		end
+	end)
+end
+
+function upvec(net)
+	setvec(net, true)
+end
+
+function keepvec(net)
+	setvec(net, nil)
+end
