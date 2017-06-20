@@ -1,6 +1,6 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170619_ne_2gaoabase_088sgd_0001_v50_h50"
+runid="170620_ne_2gaoabase_088sgd_01_v50_h50"
 --runid="debug"
 logd="logs"
 
@@ -9,7 +9,7 @@ warmcycle=0
 expdecaycycle=8
 gtraincycle=32
 
-modlr=1/8192--8192 16384 32768/2
+modlr=1/128--8192 16384 32768/2
 
 earlystop=gtraincycle
 

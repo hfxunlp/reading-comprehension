@@ -38,7 +38,7 @@ end
 
 local function setvec(net, value)
 	net:apply(function(m)
-		if torch.isTypeOf(m, 'nn.vecLookup')) then
+		if torch.isTypeOf(m, 'nn.vecLookup') then
 			m.updatevec = value
 		end
 	end)
