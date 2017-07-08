@@ -23,9 +23,9 @@ local lrKeeper = lrSheduler(modlr, nil, expdecaycycle, lrdecaycycle, earlystop, 
 logger:log("load data")
 local traind, devd = unpack(require "dloader")
 
-local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent)
+local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent, modecay)
 
-	local function _train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent)
+	local function _train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent, modecay)
 
 		logger:log("pre load package")
 		require "nn"
@@ -147,11 +147,13 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 		_inner_params, _inner_gradParams=nnmod:getParameters()
 
 		logger:log("register save model to lrScheduler")
-		lrKeeper.module=nn.Serial(nnmod):mediumSerial()
+		lrKeeper:regModel(nn.Serial(nnmod):mediumSerial())
 
 		logger:log("init train")
 		local epochs=1
 		local lr=lrKeeper.lr
+		local _minlr=lrKeeper.minlr
+		local _alr
 
 		edevrate=evaDev(nnmod,critmod,devset)
 		lrKeeper:feed(nil, edevrate, true)
@@ -176,13 +178,24 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 						xlua.progress(i, ntrain)
 						if parupdate and (i%parupdate==0) and (i~=ntrain) then
 							erate=sumErr/parupdate
-							lr=lrKeeper:feed(erate, nil, true)
+							if modecay then
+								lrKeeper:feed(erate, nil, true)
+							else
+								lr=lrKeeper:feed(erate, nil, true)
+							end
 							sumErr=0
 						end
 					end
 					if parupdate then
 						erate=sumErr/eaddtrain
-						lr=lrKeeper:feed(erate, nil, true)
+						if modecay then
+							_alr=lrKeeper:feed(erate, nil, true)
+							if _alr ~= lr then
+								lr = math.max(lr/modecay, _minlr)
+							end
+						else
+							lr=lrKeeper:feed(erate, nil, true)
+						end
 						sumErr=0
 					end
 				end
@@ -221,12 +234,20 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 								if not psilent then
 									logger:log("lr:"..lr..",Tra:"..erate..",Dev:"..edevrate)
 								end
-								lr=lrKeeper:feed(erate, edevrate, nil, psilent)
+								if modecay then
+									lrKeeper:feed(erate, edevrate, nil, psilent)
+								else
+									lr=lrKeeper:feed(erate, edevrate, nil, psilent)
+								end
 							else
 								if not psilent then
 									logger:log("lr:"..lr..",Tra:"..erate)
 								end
-								lr=lrKeeper:feed(erate, nil, nil, psilent)
+								if modecay then
+									lrKeeper:feed(erate, nil, nil, psilent)
+								else
+									lr=lrKeeper:feed(erate, nil, nil, psilent)
+								end
 							end
 							sumErr=0
 						end
@@ -238,12 +259,26 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 							if not psilent then
 								logger:log("lr:"..lr..",Tra:"..erate..",Dev:"..edevrate)
 							end
-							lr=lrKeeper:feed(erate, edevrate, nil, psilent)
+							if modecay then
+								_alr=lrKeeper:feed(erate, edevrate, nil, psilent)
+								if _alr ~= lr then
+									lr = math.max(lr/modecay, _minlr)
+								end
+							else
+								lr=lrKeeper:feed(erate, edevrate, nil, psilent)
+							end
 						else
 							if not psilent then
 								logger:log("lr:"..lr..",Tra:"..erate)
 							end
-							lr=lrKeeper:feed(erate, nil, nil, psilent)
+							if modecay then
+								_alr = lrKeeper:feed(erate, nil, nil, psilent)
+								if _alr ~= lr then
+									lr = math.max(lr/modecay, _minlr)
+								end
+							else
+								lr=lrKeeper:feed(erate, nil, nil, psilent)
+							end
 						end
 						sumErr=0
 					end
@@ -251,9 +286,16 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 				erate=sumErr/eaddtrain
 				edevrate=evaDev(nnmod,critmod,devset)
 				logger:log("epoch:"..tostring(epochs)..",lr:"..lr..",Tra:"..erate..",Dev:"..edevrate)
-				lr, cntrun = lrKeeper:feed(erate, edevrate)
+				_alr, cntrun = lrKeeper:feed(erate, edevrate)
 				if not cntrun then
 					break
+				end
+				if _alr ~= lr then
+					if modecay then
+						lr = math.max(lr/modecay, _minlr)
+					else
+						lr = _alr
+					end
 				end
 				sumErr=0
 				epochs=epochs+1
@@ -278,7 +320,7 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 	end
 
 	local _, err = pcall(function ()
-		_train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent)
+		_train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, psilent, modecay)
 		end
 	)
 	if err then
@@ -286,6 +328,6 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 	end
 end
 
-train(traind, devd, recyclemem, lrKeeper, partupdate, (parteva==nil) and true or parteva, (partsilent==nil) and true or partsilent)
+train(traind, devd, recyclemem, lrKeeper, partupdate, (parteva==nil) and true or parteva, (partsilent==nil) and true or partsilent, modtrain)
 
 logger:shutDown()
