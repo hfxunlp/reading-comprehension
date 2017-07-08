@@ -192,6 +192,7 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 							_alr=lrKeeper:feed(erate, nil, true)
 							if _alr ~= lr then
 								lr = math.max(lr/modecay, _minlr)
+								lrKeeper:setlr(lr)
 							end
 						else
 							lr=lrKeeper:feed(erate, nil, true)
@@ -263,6 +264,7 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 								_alr=lrKeeper:feed(erate, edevrate, nil, psilent)
 								if _alr ~= lr then
 									lr = math.max(lr/modecay, _minlr)
+									lrKeeper:setlr(lr)
 								end
 							else
 								lr=lrKeeper:feed(erate, edevrate, nil, psilent)
@@ -275,6 +277,7 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 								_alr = lrKeeper:feed(erate, nil, nil, psilent)
 								if _alr ~= lr then
 									lr = math.max(lr/modecay, _minlr)
+									lrKeeper:setlr(lr)
 								end
 							else
 								lr=lrKeeper:feed(erate, nil, nil, psilent)
@@ -291,6 +294,7 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 					if _alr ~= lr then
 						if modecay then
 							lr = math.max(lr/modecay, _minlr)
+							lrKeeper:setlr(lr)
 						else
 							lr = _alr
 						end
