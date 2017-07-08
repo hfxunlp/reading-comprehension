@@ -1,15 +1,13 @@
 local lrSheduler = torch.class("lrSheduler")
 
 function lrSheduler:__init(startlr, minlr, expdecaycycle, lrdecaycycle, earlystop, nsave_train, nsave_dev, autosave, save_debug, savethead, savevhead, savedhead, savetail, savemodel, logger, record_err, terrf, derrf, mindeverrate, minerrate)
-		self.startlr = startlr
-		self.lr = startlr
+		self:setlr(startlr)
 		self.minlr = (minlr==nil) and startlr/8192 or minlr
 		if self.minlr > self.startlr then
 			self.minlr = self.startlr
 		end
 		self.expdecaycycle = expdecaycycle or 1
 		self.lrdecaycycle = lrdecaycycle or 1
-		self.lrdecayepochs = 1
 		self.earlystop = earlystop
 		self.nsave_train = nsave_train or 1
 		self.nsave_dev = nsave_dev or 1
@@ -17,8 +15,6 @@ function lrSheduler:__init(startlr, minlr, expdecaycycle, lrdecaycycle, earlysto
 		self.storet = 1
 		self.storev = 1
 		self.stored = 1
-		self.amindeverr = 1
-		self.aminerr = 1
 		self.mindeverrate = mindeverrate or math.huge
 		self.minerrate = minerrate or math.huge
 		self.autosave = autosave
@@ -26,7 +22,7 @@ function lrSheduler:__init(startlr, minlr, expdecaycycle, lrdecaycycle, earlysto
 		self.savevhead = savevhead
 		self.savedhead = savedhead
 		self.savetail = savetail
-		self.module = savemodel
+		self.network = savemodel
 		self.logger = logger
 		self.record = record_err
 		self.crit = {}
@@ -160,8 +156,22 @@ local function saveObject(fname,objWrt)
 	end
 end
 
+function lrSheduler:setlr(lr)
+	self.startlr = lr
+	self.lr = lr
+	self.amindeverr = 1
+	self.aminerr = 1
+	self.lrdecayepochs = 1
+end
+
+function lrSheduler:regModel(m)
+	self.network = m
+end
+
 function lrSheduler:saveModel(fname)
-	saveObject(fname, self.module)
+	if self.network then
+		saveObject(fname, self.network)
+	end
 end
 
 function lrSheduler:getLossHistory()
