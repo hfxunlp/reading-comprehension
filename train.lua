@@ -287,18 +287,19 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 				edevrate=evaDev(nnmod,critmod,devset)
 				logger:log("epoch:"..tostring(epochs)..",lr:"..lr..",Tra:"..erate..",Dev:"..edevrate)
 				_alr, cntrun = lrKeeper:feed(erate, edevrate)
-				if not cntrun then
+				if cntrun then
+					if _alr ~= lr then
+						if modecay then
+							lr = math.max(lr/modecay, _minlr)
+						else
+							lr = _alr
+						end
+					end
+					sumErr=0
+					epochs=epochs+1
+				else
 					break
 				end
-				if _alr ~= lr then
-					if modecay then
-						lr = math.max(lr/modecay, _minlr)
-					else
-						lr = _alr
-					end
-				end
-				sumErr=0
-				epochs=epochs+1
 			end
 
 			logger:log("save neural network trained")
