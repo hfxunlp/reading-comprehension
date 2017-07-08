@@ -17,6 +17,7 @@ function lrSheduler:__init(startlr, minlr, expdecaycycle, lrdecaycycle, earlysto
 		self.stored = 1
 		self.mindeverrate = mindeverrate or math.huge
 		self.minerrate = minerrate or math.huge
+		self.amindeverr = 1
 		self.autosave = autosave
 		self.savethead = savethead
 		self.savevhead = savevhead
@@ -159,8 +160,7 @@ end
 function lrSheduler:setlr(lr)
 	self.startlr = lr
 	self.lr = lr
-	self.amindeverr = 1
-	self.aminerr = 1
+	self.aminerr = 1 -- do not put amindeverr here because it controls earlystop signal
 	self.lrdecayepochs = 1
 end
 
