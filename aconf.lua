@@ -1,6 +1,6 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170620_ne_2gaoabase_088sgd_01_v50_h50"
+runid="170708_ne_2gaoabase_088sgd_mod2_01_v50_h50"
 --runid="debug"
 logd="logs"
 
@@ -22,6 +22,8 @@ lrdecaycycle=8
 storedebug=true--store model every epoch or not
 
 cntrain=nil--"modrs/"..runid.."/devnnmod3.asc"
+
+modtrain=2--nil
 
 partrain=nil--1000
 partupdate=10000
