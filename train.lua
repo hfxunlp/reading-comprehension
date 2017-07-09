@@ -142,6 +142,11 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 		nnmod:cuda()
 		critmod:cuda()
 
+		if keepv then
+			logger:log("turn off embedding update")
+			keepvec(nnmod)
+		end
+
 		wvec=nil
 
 		_inner_params, _inner_gradParams=nnmod:getParameters()
@@ -211,6 +216,11 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 
 			logger:log("save neural network trained")
 			lrKeeper:saveModel(savedir.."nnmod.asc")
+		end
+
+		if rupdv then
+			logger:log("turn on embedding update")
+			upvec(nnmod)
 		end
 
 		epochs=1
