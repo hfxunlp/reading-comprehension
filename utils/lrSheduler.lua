@@ -1,35 +1,36 @@
 local lrSheduler = torch.class("lrSheduler")
 
 function lrSheduler:__init(startlr, minlr, expdecaycycle, lrdecaycycle, earlystop, nsave_train, nsave_dev, autosave, save_debug, savethead, savevhead, savedhead, savetail, savemodel, logger, record_err, terrf, derrf, mindeverrate, minerrate)
-		self:setlr(startlr)
-		self.minlr = (minlr==nil) and startlr/8192 or minlr
-		if self.minlr > self.startlr then
-			self.minlr = self.startlr
-		end
-		self.expdecaycycle = expdecaycycle or 1
-		self.lrdecaycycle = lrdecaycycle or 1
-		self.earlystop = earlystop
-		self.nsave_train = nsave_train or 1
-		self.nsave_dev = nsave_dev or 1
-		self.nsave_debug = (save_debug==nil) and 1 or save_debug
-		self.storet = 1
-		self.storev = 1
-		self.stored = 1
-		self.mindeverrate = mindeverrate or math.huge
-		self.minerrate = minerrate or math.huge
-		self.amindeverr = 1
-		self.autosave = autosave
-		self.savethead = savethead
-		self.savevhead = savevhead
-		self.savedhead = savedhead
-		self.savetail = savetail
-		self.network = savemodel
-		self.logger = logger
-		self.record = record_err
-		self.crit = {}
-		self.critdev = {}
-		self.terrf = terrf
-		self.derrf = derrf
+	self.initlr = startlr
+	self:setlr(startlr)
+	self.minlr = (minlr==nil) and startlr/8192 or minlr
+	if self.minlr > self.startlr then
+		self.minlr = self.startlr
+	end
+	self.expdecaycycle = expdecaycycle or 1
+	self.lrdecaycycle = lrdecaycycle or 1
+	self.earlystop = earlystop
+	self.nsave_train = nsave_train or 1
+	self.nsave_dev = nsave_dev or 1
+	self.nsave_debug = (save_debug==nil) and 1 or save_debug
+	self.storet = 1
+	self.storev = 1
+	self.stored = 1
+	self.mindeverrate = mindeverrate or math.huge
+	self.minerrate = minerrate or math.huge
+	self.amindeverr = 1
+	self.autosave = autosave
+	self.savethead = savethead
+	self.savevhead = savevhead
+	self.savedhead = savedhead
+	self.savetail = savetail
+	self.network = savemodel
+	self.logger = logger
+	self.record = record_err
+	self.crit = {}
+	self.critdev = {}
+	self.terrf = terrf
+	self.derrf = derrf
 end
 
 function lrSheduler:feed(trainerr, deverr, nosave, silent)
