@@ -175,6 +175,10 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 
 		if warmcycle>0 then
 			logger:log("start pre train")
+			if warmlr then
+				lr = warmlr
+				lrKeeper:setlr(lr)
+			end
 			for tmpi=1,warmcycle do
 				for tmpj=1,ieps do
 					xlua.progress(0, ntrain)
@@ -212,6 +216,11 @@ local function train(trainset, devset, memlimit, lrKeeper, parupdate, pareva, ps
 					sumErr=0
 				end
 				epochs=epochs+1
+			end
+
+			if lr~=lrKeeper.initlr then
+				lr=lrKeeper.initlr
+				lrKeeper:setlr(lr)
 			end
 
 			logger:log("save neural network trained")
