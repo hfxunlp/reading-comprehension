@@ -5,7 +5,12 @@ runid="170710_ne_2gaoabase_kv_088sgd_mod2_01_v50_h50"
 logd="logs"
 
 ieps=1
+
 warmcycle=0
+warmlr=nil
+keepv=1
+rupdv=nil
+
 expdecaycycle=8
 gtraincycle=32
 
@@ -18,9 +23,6 @@ csave=3
 lrdecaycycle=8
 
 recyclemem=nil--0.05
-
-keepv=1
-rupdv=nil
 
 storedebug=true--store model every epoch or not
 
