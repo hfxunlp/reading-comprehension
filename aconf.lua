@@ -1,6 +1,6 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170708_ne_2gaoabase_088sgd_mod2_01_v50_h50"
+runid="170710_ne_2gaoabase_kv_088sgd_mod2_01_v50_h50"
 --runid="debug"
 logd="logs"
 
@@ -17,7 +17,10 @@ csave=3
 
 lrdecaycycle=8
 
---recyclemem=0.05
+recyclemem=nil--0.05
+
+keepv=1
+rupdv=nil
 
 storedebug=true--store model every epoch or not
 
