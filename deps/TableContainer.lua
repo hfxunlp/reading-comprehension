@@ -221,15 +221,16 @@ function TableContainer:backward(input, gradOutput, scale)
 end
 
 function TableContainer:training()
-	for _, net in ipairs(self.nets) do
+	--[[for _, net in ipairs(self.nets) do
 		net:training()
 	end
-	parent.training(self)
+	parent.training(self)]]
+	self:net(1):training()
 end
 
 function TableContainer:evaluate()
 	self:net(1):evaluate()
-	parent.evaluate(self)
+	--parent.evaluate(self)
 end
 
 function TableContainer:clearState()
