@@ -9,9 +9,6 @@ end
 function GA:updateOutput(input)
 	local doc, q = unpack(input)
 	local _s = doc:size()
-	if not self.output:isSize(_s) then
-		self.output:resize(_s)
-	end
 	local slen = _s[1]
 	local bsize = _s[2]
 	local vsize = _s[3]
