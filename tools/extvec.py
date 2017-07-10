@@ -7,7 +7,7 @@ sys.setdefaultencoding("utf-8")
 from random import random
 
 def ld(fmap, minkeep = 5):
-	rs = {"<unk>":"1"}
+	rs = {"<unk>":1}
 	with open(fmap) as frd:
 		curid = 2
 		for line in frd:
@@ -18,7 +18,7 @@ def ld(fmap, minkeep = 5):
 				c = int(tmp[0])
 				if c >= minkeep:
 					for wd in tmp[1:]:
-						rs[wd] = str(curid)
+						rs[wd] = curid
 						curid += 1
 				else:
 					break
