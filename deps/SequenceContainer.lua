@@ -160,15 +160,16 @@ function SequenceContainer:net(t)
 end
 
 function SequenceContainer:training()
-	for _, net in ipairs(self.nets) do
+	--[[for _, net in ipairs(self.nets) do
 		net:training()
 	end
-	parent.training(self)
+	parent.training(self)]]
+	self:net(1):training()
 end
 
 function SequenceContainer:evaluate()
 	self:net(1):evaluate()
-	parent.evaluate(self)
+	--parent.evaluate(self)
 end
 
 function SequenceContainer:clearState()
