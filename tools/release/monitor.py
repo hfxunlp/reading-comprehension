@@ -10,6 +10,7 @@ nthread=8
 sleeptime=5
 plock=threading.Lock()
 printlock=threading.Lock()
+cmd="luajit -b"
 
 def mulprint(strp):
 	global printlock
@@ -70,5 +71,6 @@ def handle(src, rs):
 	del rsp
 
 if __name__=="__main__":
-	cmd=sys.argv[3].decode("utf-8")
+	if len(sys.argv)>3:
+		cmd=sys.argv[3].decode("utf-8")
 	handle(sys.argv[1].decode("utf-8"), sys.argv[2].decode("utf-8"))
