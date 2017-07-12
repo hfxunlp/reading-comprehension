@@ -1,7 +1,7 @@
 starterate=math.huge--warning:only used as init erate, not asigned to criterion
 
-runid="170710_ne_2gaoabase_kvuv_088sgd_mod2_01_v50_h50"
-loadid=nil or runid--"170710_ne_2gaoabase_kv_088sgd_mod2_01_v50_h50"
+runid="170712_ne_2gaoabase_kvuv_088sgd_mod2_01_v50_h50"
+loadid="170710_ne_2gaoabase_kv_088sgd_mod2_01_v50_h50"--nil or runid
 --runid="debug"
 logd="logs"
 
@@ -12,7 +12,7 @@ modlr=1/128--8192 16384 32768/2
 warmcycle=0--1
 warmlr=nil--modlr/8
 keepv=nil--1
-rupdv=nil--1
+rupdv=1--nil
 
 expdecaycycle=8
 gtraincycle=32
@@ -27,7 +27,7 @@ recyclemem=nil--0.05
 
 storedebug=true--store model every epoch or not
 
-cntrain=nil--"modrs/"..loadid.."/devnnmod1.asc"
+cntrain="modrs/"..loadid.."/devnnmod3.asc"--nil
 
 modtrain=2--nil
 
