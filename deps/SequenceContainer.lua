@@ -1,11 +1,12 @@
 local SequenceContainer, parent = torch.class('nn.SequenceContainer', 'nn.Container')
 
-function SequenceContainer:__init(module)
+function SequenceContainer:__init(module, shareModule)
 	parent.__init(self)
 	self.network = module
 	self.network:training()
 	self:add(module)
 	self.nets = {}
+	self.shareModule = shareModule
 end
 
 local function sharedClone(module, shareParams, shareGradParams, SequencePointer)
@@ -126,7 +127,7 @@ local function sharedClone(module, shareParams, shareGradParams, SequencePointer
 		local sequencerContainers = {}
 
 		module:apply(function(m)
-			if (torch.isTypeOf(m, 'nn.TableContainer') or torch.isTypeOf(m, 'nn.SequenceContainer')) and m.syncstep then
+			if torch.isTypeOf(m, 'nn.SequenceContainer') and m.syncstep then
 				table.insert(sequencerContainers, m)
 			end
 		end)
@@ -134,7 +135,7 @@ local function sharedClone(module, shareParams, shareGradParams, SequencePointer
 		if #sequencerModules > 0 then
 			local curid = 1
 			clone:apply(function(m)
-				if (torch.isTypeOf(m, 'nn.TableContainer') or torch.isTypeOf(m, 'nn.SequenceContainer')) and m.syncstep then
+				if torch.isTypeOf(m, 'nn.SequenceContainer') and m.syncstep then
 					m = sequencerContainers[curid]
 					curid = curid + 1
 				end
@@ -146,7 +147,7 @@ local function sharedClone(module, shareParams, shareGradParams, SequencePointer
 end
 
 function SequenceContainer:net(t)
-	if self.train then
+	if self.train and (not self.shareModule) then
 		if not self.nets[t] then
 			self.nets[t] = sharedClone(self.network, self.shareParams, self.shareGradParams, self.synchild)
 		end
@@ -160,16 +161,11 @@ function SequenceContainer:net(t)
 end
 
 function SequenceContainer:training()
-	--[[for _, net in ipairs(self.nets) do
-		net:training()
-	end
-	parent.training(self)]]
 	self:net(1):training()
 end
 
 function SequenceContainer:evaluate()
 	self:net(1):evaluate()
-	--parent.evaluate(self)
 end
 
 function SequenceContainer:clearState()
