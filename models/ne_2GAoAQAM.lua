@@ -2,7 +2,6 @@ require "nngraph"
 require "deps.CScore"
 require "deps.AoA"
 require "deps.fColl"
-require "deps.SequenceContainer"
 require "deps.ADim"
 require "deps.GA"
 
