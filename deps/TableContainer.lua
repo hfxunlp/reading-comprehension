@@ -14,12 +14,16 @@ function TableContainer:updateOutput(input)
 			self.output[_] = self:net(_):updateOutput(v)
 		end
 	end
-	self.output[#input + 1] = nil
+	for _ = #input + 1, #self.output do
+		self.output[_] = nil
+	end
 	return self.output
 end
 
 function TableContainer:updateGradInput(input, gradOutput)
-	self.gradInput[#input + 1] = nil
+	for _ = #input + 1, #self.gradInput do
+		self.gradInput[_] = nil
+	end
 	if self.shareModule then
 		for _, v in ipairs(gradOutput) do
 			self.gradInput[_] = self:net(_):updateGradInput(input[_], v):clone()
@@ -39,7 +43,9 @@ function TableContainer:accGradParameters(input, gradOutput, scale)
 end
 
 function TableContainer:backward(input, gradOutput, scale)
-	self.gradInput[#input + 1] = nil
+	for _ = #input + 1, #self.gradInput do
+		self.gradInput[_] = nil
+	end
 	if self.shareModule then
 		for _, v in ipairs(gradOutput) do
 			self.gradInput[_] = self:net(_):backward(input[_], v, scale):clone()
