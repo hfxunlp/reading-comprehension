@@ -94,7 +94,7 @@ def getans_mwd(pas, scl, mapd, ptag, rec):
 	lim = False
 	if alw:
 		for w in alw:
-			if w!="XXXXX" and w in rsd:
+			if w!=u"XXXXX" and w in rsd:
 				rsw = w
 				print(w)
 				lim = True
