@@ -29,7 +29,7 @@ def getn(srcl, fd, ptag):
 def getcand(pas, rsd, ptag):
 	nu = set()
 	for sent in pas:
-		nc |= getn(sent, rsd, ptag)
+		nu |= getn(sent, rsd, ptag)
 	return nu
 
 def ldmap(fmap, minkeep = 5):
