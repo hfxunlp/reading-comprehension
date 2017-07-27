@@ -1,6 +1,6 @@
-local modf = "modrs/170614_ne_2aoabase_088sgd_0001_v50_h50/devnnmod1.asc" -- model file
-local tif = "datasrc/duse/valid.data" -- test input, json format
-local rsf = "test/aoanscore.txt" -- result score file
+local tif = arg[1] or "datasrc/duse/valid.data" -- test input, json format
+local rsf = arg[2] or "test/aoanscore.txt" -- result score file
+local modf = arg[3] or "modrs/170614_ne_2aoabase_088sgd_0001_v50_h50/devnnmod1.asc" -- model file
 
 torch.setdefaulttensortype('torch.FloatTensor')
 
