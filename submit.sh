@@ -6,7 +6,7 @@ export rsf=$2
 export tmpd="temp"
 export toold="tools"
 
-if [ -d $tmpd]; then  
+if [ -d "$tmpd"]; then  
   rm -fr $tmpd  
 fi
 mkdir -p $tmpd
